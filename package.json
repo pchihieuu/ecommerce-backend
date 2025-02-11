@@ -1,0 +1,26 @@
+{
+  "name": "ecommerce-backend-nodejs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "compression": "^1.8.0",
+    "dotenv": "^16.4.7",
+    "helmet": "^8.0.0",
+    "mongoose": "^8.10.0",
+    "morgan": "^1.10.0"
+  }
+}
