@@ -16,7 +16,8 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "compression": "^1.8.0",
