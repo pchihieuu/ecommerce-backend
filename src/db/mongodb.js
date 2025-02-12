@@ -3,9 +3,12 @@
 const mongoose = require("mongoose");
 
 require("dotenv").config();
-
-const connectString = process.env.DB_URL;
+const {
+  db: { port, host, name },
+} = require("../configs/database.js");
 const { countConnect } = require("../helpers/check.connect");
+const connectString = `mongodb://${host}:${port}/${name}`;
+console.log(connectString);
 class Database {
   constructor() {
     this.connect();
