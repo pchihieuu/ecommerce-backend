@@ -1,23 +1,14 @@
-# @url_dev=http://localhost:3055/v1/api
+@url_dev=http://localhost:3055/v1/api
 
-# ### signup
-# POST {{url_dev}}/shop/signup
-# Content-Type: application/json
-# x-api-key: abc12345678
-
-# {
-#     "name": "Hades Store",
-#     "email": "hadesshop03@gmail.com",
-#     "password": "hieudz1221"
-# }
-
-
-POST http://localhost:3055/v1/api/shop/signup
+### signup
+POST {{url_dev}}/shop/signup
 Content-Type: application/json
-x-api-key: abc12345678
+x-api-key: c18e21a49af82d72fe8ad9155637d40b0ee01653880d8dcd42f9277168f6af32
 
 {
     "name": "Shop Name",
     "email": "shopname@gmail.com",
     "password": "hieudz1221"
 }
+
+

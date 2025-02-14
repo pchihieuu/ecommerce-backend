@@ -4,7 +4,7 @@ const { model, Schema, Types } = require("mongoose"); // Erase if already requir
 
 const DOCUMENT_NAME = "Apikey";
 const COLLECTION_NAME = "Apikeys";
-
+const PERMISSIONS = require("../constants/permissions.constant");
 // Declare the Schema of the Mongo model
 const apiKeySchema = new Schema(
   {
@@ -12,15 +12,18 @@ const apiKeySchema = new Schema(
       type: String,
       require: true,
       unque: true,
+      index: true,
     },
     status: {
       type: Boolean,
+      index: true,
       default: true,
     },
     permissions: {
       type: [String],
       require: true,
-      enum: ["0000", "1111", "2222"],
+      enum: Object.values(PERMISSIONS),
+      default: [PERMISSIONS.READ],
     },
     createdAt: {
       type: Date,
