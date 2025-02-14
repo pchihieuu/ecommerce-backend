@@ -6,8 +6,8 @@ Content-Type: application/json
 x-api-key: c18e21a49af82d72fe8ad9155637d40b0ee01653880d8dcd42f9277168f6af32
 
 {
-    "name": "LEVENT Store",
-    "email": "levent@gmail.com",
+    "name": "BadHabbit Store",
+    "email": "badhabbit@gmail.com",
     "password": "hieudz1221"
 }
 

@@ -2,16 +2,23 @@
 
 const AccessService = require("../services/access.service");
 const { CREATED } = require("../core/success.respone");
+
 class AccessController {
-  signUp = async (req, res, next) => {
-    new CREATED({
-      message: "Register successfully!",
-      metadata: await AccessService.signUp(req.body),
-      options: {
-        limit: 10,
-      },
-    }).send(res);
-  };
+  static async signUp(req, res, next) {
+    try {
+      const metadata = await AccessService.signUp(req.body);
+
+      return CREATED.send(res, {
+        message: "Shop registered successfully!",
+        metadata,
+        options: {
+          limit: 10,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
-module.exports = new AccessController();
+module.exports = AccessController;

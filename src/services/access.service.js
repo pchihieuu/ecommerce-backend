@@ -8,12 +8,7 @@ const { createTokenPair } = require("../auth/authUtils");
 const { getInfoData } = require("../utils");
 const { BadRequestRespone } = require("../core/error.respone");
 
-const RoleShop = {
-  SHOP: "SHOP",
-  WRITTER: "WRITTER",
-  EDITOR: "EDITOR",
-  ADMIN: "ADMIN",
-};
+const RoleShop = require('../constants/roleshop.constant')
 
 class AccessService {
   static signUp = async ({ name, email, password }) => {
