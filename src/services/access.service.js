@@ -7,7 +7,7 @@ const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
 const { getInfoData } = require("../utils");
 const { BadRequestRespone } = require("../core/error.respone");
-
+const { ValidationUtils } = require("../utils/validation");
 const RoleShop = {
   SHOP: "SHOP",
   WRITTER: "WRITTER",
@@ -17,6 +17,7 @@ const RoleShop = {
 
 class AccessService {
   static signUp = async ({ name, email, password }) => {
+    ValidationUtils.validateSignUpData({ email, password });
     // Check if shop already exists
     const holderShop = await shopModel.findOne({ email }).lean();
     if (holderShop) {
