@@ -21,10 +21,14 @@ const keyTokenSchema = new Schema(
       type: String,
       require: true,
     },
-    refeshToken: {
+    refreshTokensUsed: {
       type: Array,
       default: [],
     },
+    refreshToken: {
+      type: String,
+      require: true
+    }
   },
   {
     timestamps: true,
