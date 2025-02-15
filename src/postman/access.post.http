@@ -3,12 +3,10 @@
 ### signup
 POST {{url_dev}}/shop/signup
 Content-Type: application/json
-x-api-key: c18e21a49af82d72fe8ad9155637d40b0ee01653880d8dcd42f9277168f6af32
+x-api-key: cea65038b9e1b3ebd7990b8d9663d1c772a01af2f56a9e1901582e3963745051
 
 {
-    "name": "JBaggy Store",
-    "email": "jbaggy@gmail.com",
+    "name": "Havit Store",
+    "email": "havitstore@gmail.com",
     "password": "Hieudz1221"
 }
-
-
