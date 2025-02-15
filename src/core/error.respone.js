@@ -52,9 +52,18 @@ class NotFoundRespone extends ErrorRespone {
     super(message, statusCode);
   }
 }
+class ForbiddenRespone extends ErrorRespone {
+  constructor(
+    message = ReasonPhrases.FORBIDDEN,
+    statusCode = StatusCodes.FORBIDDEN
+  ) {
+    super(message, statusCode);
+  }
+}
 module.exports = {
   ConflictRespone,
   BadRequestRespone,
   AuthFailureRespone,
   NotFoundRespone,
+  ForbiddenRespone,
 };
