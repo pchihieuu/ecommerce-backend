@@ -132,7 +132,7 @@ class AccessService {
         refreshToken: newRefreshToken,
       },
       $addToSet: {
-        refreshTokenUsed: refreshToken,
+        refreshTokensUsed: refreshToken,
       },
     });
     return {

@@ -40,7 +40,7 @@ class KeyTokenService {
       return tokens ? tokens.publicKey : null;
     } catch (error) {
       console.error("Create Key Token Error::", error);
-      return null;
+      return error;
     }
   };
   static findByUserId = async (userId) => {
@@ -54,7 +54,7 @@ class KeyTokenService {
   static findByRefreshTokenUsed = async (refreshToken) => {
     return await keytokenModel
       .findOne({
-        refreshTokenUsed: refreshToken,
+        refreshTokensUsed: refreshToken,
       })
       .lean();
   };
