@@ -22,61 +22,49 @@ const RoleShop = {
 
 class AccessService {
   // /* check token used*/
-  // static handleRefreshToken = async (refreshToken) => {
-  //   // check token da duoc su dung chua?
-  //   const foundToken = KeyTokenService.findByRefreshTokenUsed(refreshToken);
-  //   if (foundToken) {
-  //     const { userId, email } = await verifyJWT(
-  //       refreshToken,
-  //       foundToken.privateKey
-  //     );
-  //     console.log({ userId, email });
-  //     // xoa tat ca token trong keyStore
-  //     await KeyTokenService.deleteKeyByUserId(userId);
-  //     throw new ForbiddenRespone("Something wrong happened!! Please relogin");
-  //   }
+  static handleRefreshTokenV2 = async ({ refreshToken, user, keyStore }) => {
+    const { userId, email } = user;
+    if (keyStore.refreshTokensUsed.includes(refreshToken)) {
+      await KeyTokenService.deleteKeyByUserId(userId);
+      throw new ForbiddenError("Something wrong happened!! Please relogin");
+    }
+    if (keyStore.refreshToken !== refreshToken) {
+      throw new AuthFailureError("Shop not registered");
+    }
+    // check userId, email
+    const foundShop = await findByEmail({ email });
+    if (!foundShop) {
+      throw new AuthFailureError("Shop not registerred");
+    }
+    // neu thoa man hop le
+    // 1. create cap token moi
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      await createTokenPair(
+        {
+          userId,
+          email,
+        },
+        keyStore.privateKey,
+        keyStore.publicKey
+      );
 
-  //   const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
-  //   if (!holderToken) throw new AuthFailureRespone("Shop not registered");
-
-  //   // verify token
-  //   const { userId, email } = await verifyJWT(
-  //     refreshToken,
-  //     holderToken.privateKey
-  //   );
-  //   console.log(`[2]::`, { userId, email });
-  //   // check userId
-  //   const foundShop = await findByEmail({ email });
-  //   if (!foundShop) throw new AuthFailureRespone("Shop not registered");
-
-  //   // neu thoa man hop le
-  //   // 1. create cap token moi
-  //   const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-  //     await createTokenPair(
-  //       {
-  //         userId,
-  //         email,
-  //       },
-  //       holderToken.privateKey,
-  //       holderToken.publicKey
-  //     );
-  //   // 2. dua refreshToken vua gui vao danh sach het han
-  //   await holderToken.updateOne({
-  //     $set: {
-  //       refreshToken: newRefreshToken,
-  //     },
-  //     $addToSet: {
-  //       refreshTokenUsed: refreshToken,
-  //     },
-  //   });
-  //   return {
-  //     user: { userId, email },
-  //     tokens: {
-  //       refreshToken: newRefreshToken,
-  //       accessToken: newAccessToken,
-  //     },
-  //   };
-  // };
+    // 2. dua refreshToken vua gui vao danh sach het han
+    await keyStore.updateOne({
+      $set: {
+        refreshToken: newRefreshToken,
+      },
+      $addToSet: {
+        refreshTokenUsed: refreshToken,
+      },
+    });
+    return {
+      user: { userId, email },
+      tokens: {
+        refreshToken: newRefreshToken,
+        accessToken: newAccessToken,
+      },
+    };
+  };
 
   static handleRefreshToken = async (refreshToken) => {
     // xem refreshToken gui len da het han hay chua
