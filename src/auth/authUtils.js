@@ -39,29 +39,34 @@ const createTokenPair = async (payload, publicKey, privateKey) => {
 };
 
 const authentication = asyncHandler(async (req, res, next) => {
-  // 1. check userId missing?
-  // 2. get accessToken
-  // 3. verify token
-  // 4. check user in dbs
-  // 5. check keyStore with userId
-  // 6. return next
+  /**
+   * 1 - Check userId missing ?
+   * 2 - Get access token
+   * 3 - Verify token
+   * 4 - Check user in db
+   * 5 - Check keyStore with this userId
+   */
   const userId = req.headers[HEADERS.CLIENT_ID];
-  if (!userId) throw new AuthFailureRespone("Invalid request");
-
+  if (!userId) {
+    throw new AuthFailureRespone("Invalid Request");
+  }
   const keyStore = await findByUserId(userId);
-  if (!keyStore) throw new NotFoundRespone("KeyStore not found");
-
+  if (!keyStore) {
+    throw new NotFoundRespone("Not Found");
+  }
   const accessToken = req.headers[HEADERS.AUTHORIZATION];
-  if (!accessToken) throw new AuthFailureRespone("Invalid request");
-
+  if (!accessToken) {
+    throw new AuthFailureRespone("Invalid Request");
+  }
   try {
     const decodeUser = JWT.verify(accessToken, keyStore.publicKey);
-    if (userId !== decodeUser.userId)
-      throw new AuthFailureRespone("Invalid user");
+    if (userId !== decodeUser.userId) {
+      throw new NotFoundRespone("Not Found");
+    }
     req.keyStore = keyStore;
     return next();
   } catch (error) {
-    throw error;
+    throw new Error(error.message);
   }
 });
 
