@@ -11,18 +11,6 @@ class KeyTokenService {
     refreshToken,
   }) => {
     try {
-      // Convert public key to string if needed
-      // const publicKeyString = publicKey.toString();
-
-      // Create token document
-      //   const filter = { user: userId };
-      //   const update = {
-      //     publicKey: publicKeyString,
-      //     refreshTokens: refreshToken ? [refreshToken] : [],
-      //     user: userId,
-      //   };
-      //   const options = { upsert: true, new: true };
-
       const filter = { user: userId },
         update = {
           publicKey,

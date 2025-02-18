@@ -22,47 +22,39 @@ const RoleShop = {
 
 class AccessService {
   // /* check token used*/
-  static handleRefreshTokenV2 = async ({ refreshToken, user, keyStore }) => {
+  static handleRefreshTokenV2 = async ({ keyStore, user, refreshToken }) => {
     const { userId, email } = user;
     if (keyStore.refreshTokensUsed.includes(refreshToken)) {
       await KeyTokenService.deleteKeyByUserId(userId);
-      throw new ForbiddenError("Something wrong happened!! Please relogin");
+      throw new ForbiddenRespone("Something wrong happened!! Please relogin");
     }
     if (keyStore.refreshToken !== refreshToken) {
-      throw new AuthFailureError("Shop not registered");
+      throw new AuthFailureRespone("Shop not registered");
     }
     // check userId, email
     const foundShop = await findByEmail({ email });
     if (!foundShop) {
-      throw new AuthFailureError("Shop not registerred");
+      throw new AuthFailureRespone("Shop not registerred");
     }
     // neu thoa man hop le
     // 1. create cap token moi
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      await createTokenPair(
-        {
-          userId,
-          email,
-        },
-        keyStore.privateKey,
-        keyStore.publicKey
-      );
-
+    const tokens = await createTokenPair(
+      { userId, email },
+      keyStore.publicKey,
+      keyStore.privateKey
+    );
     // 2. dua refreshToken vua gui vao danh sach het han
     await keyStore.updateOne({
       $set: {
-        refreshToken: newRefreshToken,
+        refreshToken: tokens.refreshToken,
       },
       $addToSet: {
-        refreshTokenUsed: refreshToken,
+        refreshTokensUsed: refreshToken, // Match the model field name
       },
     });
     return {
-      user: { userId, email },
-      tokens: {
-        refreshToken: newRefreshToken,
-        accessToken: newAccessToken,
-      },
+      user,
+      tokens,
     };
   };
 
