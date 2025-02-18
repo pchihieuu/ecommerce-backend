@@ -1,22 +1,30 @@
 "use strict";
 const { BadRequestRespone } = require("../core/error.respone");
 
-const { product, clothing, electronic } = require("../models/product.model");
+const {
+  product,
+  clothing,
+  electronic,
+  furniture,
+} = require("../models/product.model");
 const TYPES = {
   Electronics: "Electronics",
   Clothing: "Clothing",
+  Furniture: "Furniture",
 };
 // Define Factory class to create product
 class ProductFactory {
+  static productRegistry = {}; //key-class
+
+  static registerProductType(type, classRef) {
+    ProductFactory.productRegistry[type] = classRef;
+  }
   static async createProduct(type, payload) {
-    switch (type) {
-      case TYPES.Electronics:
-        return new Electronics(payload).createProduct();
-      case TYPES.Clothing:
-        return new Clothing(payload).createProduct();
-      default:
-        throw new BadRequestRespone(`Invalid Product Type::${type}`);
-    }
+    const productType = ProductFactory.productRegistry[type];
+    if (!productType)
+      throw new BadRequestRespone(`Invalid Product Type::${type}`);
+
+    return new productType(payload).createProduct();
   }
 }
 // Define base Product class
@@ -78,4 +86,26 @@ class Electronics extends Product {
     return newProduct;
   }
 }
+// Define Furniture
+class Furniture extends Product {
+  async createProduct() {
+    const newFurniture = await furniture.create({
+      ...this.product_attributes,
+      product_shop: this.product_shop,
+    });
+    if (!newFurniture) {
+      throw new BadRequestRespone("Create new Furniture error");
+    }
+    const newProduct = await super.createProduct(newFurniture._id);
+    if (!newProduct) {
+      throw new BadRequestRespone("Create new Product error");
+    }
+    return newProduct;
+  }
+}
+// export register product types
+ProductFactory.registerProductType(TYPES.Electronics, Electronics);
+ProductFactory.registerProductType(TYPES.Clothing, Clothing);
+ProductFactory.registerProductType(TYPES.Furniture, Furniture);
+
 module.exports = ProductFactory;
