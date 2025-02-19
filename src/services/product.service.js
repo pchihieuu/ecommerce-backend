@@ -1,4 +1,11 @@
 "use strict";
+const {
+  findAllDraftProducts,
+  publishProductByShop,
+  findAllPublishedProducts,
+  unpublishProductByShop,
+  searctProductsByUser,
+} = require("../models/repository/product.repo");
 const { BadRequestRespone } = require("../core/error.respone");
 
 const {
@@ -25,6 +32,31 @@ class ProductFactory {
       throw new BadRequestRespone(`Invalid Product Type::${type}`);
 
     return new productType(payload).createProduct();
+  }
+  // put
+  static async publishProductByShop({ product_shop, product_id }) {
+    return await publishProductByShop({ product_shop, product_id });
+  }
+
+  static async unpublishProductByShop({ product_shop, product_id }) {
+    return await unpublishProductByShop({ product_shop, product_id });
+  }
+
+  // query
+  static async findAllDraftProducts({ product_shop, limit = 50, skip = 0 }) {
+    const query = { product_shop, isDraft: true };
+    return await findAllDraftProducts({ query, limit, skip });
+  }
+  static async findAllPublishedProducts({
+    product_shop,
+    limit = 50,
+    skip = 0,
+  }) {
+    const query = { product_shop, isPublished: true };
+    return await findAllPublishedProducts({ query, limit, skip });
+  }
+  static async searchProducts({ keySearch }) {
+    return await searctProductsByUser({ keySearch });
   }
 }
 // Define base Product class
