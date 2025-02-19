@@ -8,8 +8,11 @@ const productController = require("../../controllers/product.controller");
 
 router.get(
   "/search/:keySearch",
-  asyncHandler(productController.searctProductsByUser)
+  asyncHandler(productController.searchProductsByUser)
 );
+router.get("/all", asyncHandler(productController.getAllProducts));
+router.get("/detail/:id", asyncHandler(productController.getDetailProduct));
+
 // authentication
 router.use(authenticationV2);
 // create product

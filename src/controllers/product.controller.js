@@ -65,11 +65,27 @@ class ProductController {
     }).send(res);
   };
 
-  searctProductsByUser = async (req, res, next) => {
+  searchProductsByUser = async (req, res, next) => {
     new SuccessRespone({
       message: "Get list search publish product success",
       metadata: await ProductService.searchProducts({
         keySearch: req.params.keySearch,
+      }),
+    }).send(res);
+  };
+
+  getAllProducts = async (req, res, next) => {
+    new SuccessRespone({
+      message: "Get list all product success",
+      metadata: await ProductService.findAllProducts(req.query),
+    }).send(res);
+  };
+
+  getDetailProduct = async (req, res, next) => {
+    new SuccessRespone({
+      message: "Get detail product success",
+      metadata: await ProductService.findDetailProduct({
+        product_id: req.params.id,
       }),
     }).send(res);
   };
