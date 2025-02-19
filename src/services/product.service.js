@@ -4,7 +4,9 @@ const {
   publishProductByShop,
   findAllPublishedProducts,
   unpublishProductByShop,
-  searctProductsByUser,
+  searchProductsByUser,
+  findAllProducts,
+  findDetailProduct,
 } = require("../models/repository/product.repo");
 const { BadRequestRespone } = require("../core/error.respone");
 
@@ -56,7 +58,26 @@ class ProductFactory {
     return await findAllPublishedProducts({ query, limit, skip });
   }
   static async searchProducts({ keySearch }) {
-    return await searctProductsByUser({ keySearch });
+    return await searchProductsByUser({ keySearch });
+  }
+
+  static async findAllProducts({
+    limit = 50,
+    sort = "ctime",
+    page = 1,
+    filter = { isPublished: true },
+  }) {
+    return await findAllProducts({
+      limit,
+      sort,
+      page,
+      filter,
+      select: ["product_name", "product_thumb", "product_price"],
+    });
+  }
+
+  static async findDetailProduct({ product_id }) {
+    return await findDetailProduct({ product_id, unSelect: ["__v"] });
   }
 }
 // Define base Product class
