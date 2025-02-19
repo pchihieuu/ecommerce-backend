@@ -86,7 +86,7 @@ class ProductFactory {
     const productType = ProductFactory.productRegistry[product_type];
     if (!productType)
       throw new BadRequestRespone(`Invalid Product Type::${product_type}`);
-  
+
     return new productType(payload).updateProduct(product_id);
   }
 }
