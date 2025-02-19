@@ -6,7 +6,7 @@ const {
   clothing,
   furniture,
 } = require("../product.model");
-const { Types } = require("mongoose");
+const { Types, default: mongoose } = require("mongoose");
 const { getSelectData, unSelectData } = require("../../utils/index");
 
 const findAllDraftProducts = async ({ query, limit, skip }) => {
@@ -83,6 +83,21 @@ const findDetailProduct = async ({ product_id, unSelect }) => {
     .lean();
 };
 
+const updateProductById = async ({
+  product_id,
+  updateData,
+  model,
+  isNews = true,
+}) => {
+  return await model.updateOne(
+    {
+      _id: new mongoose.Types.ObjectId(product_id),
+    },
+    updateData,
+    { new: isNews }
+  );
+};
+
 const queryListProducts = async ({ query, limit, skip }) => {
   return await product
     .find(query)
@@ -101,4 +116,5 @@ module.exports = {
   searchProductsByUser,
   findAllProducts,
   findDetailProduct,
+  updateProductById,
 };
