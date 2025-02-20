@@ -18,6 +18,7 @@ const {
   furniture,
 } = require("../models/product.model");
 const { removeUndefinedObject, updateNestedObject } = require("../utils");
+const { insertInventory } = require("../models/repository/invetory.repo");
 const TYPES = {
   Electronics: "Electronics",
   Clothing: "Clothing",
@@ -112,8 +113,19 @@ class Product {
     this.product_attributes = product_attributes;
   }
   async createProduct(product_id) {
-    return await product.create({ ...this, _id: product_id });
+    const newProduct = await product.create({ ...this, _id: product_id });
+    if (newProduct) {
+      // add product_stock in inventory collection
+      await insertInventory({
+        product_id: newProduct._id,
+        shop_id: newProduct.product_shop,
+        stock: newProduct.product_quantity,
+        location: "Tp.Ho Chi Minh. Vietnam",
+      });
+    }
+    return newProduct;
   }
+
   async updateProduct(productId, bodyUpdate) {
     return await updateProductById({
       product_id: productId,
