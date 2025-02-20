@@ -51,6 +51,7 @@ const discountSchema = new Schema(
     discount_max_uses_per_user: {
       type: Number,
       required: true,
+      default: 1,
     },
     // users nao da su dung discount nay
     discount_users_used: {
