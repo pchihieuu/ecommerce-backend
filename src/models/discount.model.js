@@ -64,7 +64,7 @@ const discountSchema = new Schema(
       required: true,
     },
     discount_shop_id: {
-      type: Schema.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Shop",
     },
     discount_is_active: {
