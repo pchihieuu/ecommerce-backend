@@ -10,3 +10,16 @@ x-api-key: cea65038b9e1b3ebd7990b8d9663d1c772a01af2f56a9e1901582e3963745051
     "email": "havitstore@gmail.com",
     "password": "Hieudz1221"
 }
+
+####
+GET http://localhost:3055/v1/api/discount/list_product_code
+Headers:
+x-api-key: cea65038b9e1b3ebd7990b8d9663d1c772a01af2f56a9e1901582e3963745051
+x-client-id: 67b0fba60a89b9f8dc46b8a9
+x-rtoken-id: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2IwZmJhNjBhODliOWY4ZGM0NmI4YTkiLCJlbWFpbCI6Imhhdml0c3RvcmVAZ21haWwuY29tIiwiaWF0IjoxNzQwMjM3MzcxLCJleHAiOjE3NDA4NDIxNzF9.l_rn_Mc6OBHh7GSH39LlEHYbLJ1mNRB1oknF1grelps
+
+Query Parameters:
+code: SPRING15
+shop_id: 67b0fba60a89b9f8dc46b8a9
+limit: 50
+page: 1
