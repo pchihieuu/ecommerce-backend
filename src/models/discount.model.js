@@ -58,7 +58,10 @@ const discountSchema = new Schema(
       type: Array,
       default: [],
     },
-
+    discount_max_value: {
+      type: Number,
+      required: true,
+    },
     discount_min_order_value: {
       type: Number,
       required: true,
