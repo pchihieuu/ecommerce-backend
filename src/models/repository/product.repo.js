@@ -7,7 +7,11 @@ const {
   furniture,
 } = require("../product.model");
 const { Types, default: mongoose } = require("mongoose");
-const { getSelectData, unSelectData } = require("../../utils/index");
+const {
+  getSelectData,
+  unSelectData,
+  convertToObjectId,
+} = require("../../utils/index");
 
 const findAllDraftProducts = async ({ query, limit, skip }) => {
   return await queryListProducts({ query, limit, skip });
@@ -63,9 +67,9 @@ const unpublishProductByShop = async ({ product_shop, product_id }) => {
 };
 
 const findAllProducts = async ({
-  limit,
+  limit = 50,
   sort,
-  page,
+  page = 1,
   filter,
   select,
 }) => {
@@ -104,6 +108,15 @@ const updateProductById = async ({
   );
 };
 
+const getProductById = async ({ productId }) => {
+  return await product
+    .findOne({
+      _id: convertToObjectId(productId),
+      isPublished: true,
+    })
+    .lean();
+};
+
 const queryListProducts = async ({ query, limit, skip }) => {
   return await product
     .find(query)
@@ -123,4 +136,5 @@ module.exports = {
   findAllProducts,
   findDetailProduct,
   updateProductById,
+  getProductById,
 };

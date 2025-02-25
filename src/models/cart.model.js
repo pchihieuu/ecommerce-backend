@@ -40,10 +40,6 @@ const cartSchema = new Schema(
   },
   {
     timestamps: true,
-    // timeseries: {
-    //   createdAt: "createdOn",
-    //   updatedAt: "modifiedOn",
-    // },
     collection: COLLECTION_NAME,
   }
 );
