@@ -53,7 +53,7 @@ class DiscountController {
     new SuccessRespone({
       message: "Success",
       metadata: await DiscountService.deleteDiscountCode({
-        ...req.query,
+        ...req.body,
       }),
     }).send(res);
   };

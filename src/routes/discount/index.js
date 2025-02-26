@@ -59,7 +59,7 @@ router.use(authenticationV2);
 
 router.post("/create", asyncHandler(discountController.createDiscountCode));
 router.get("/get-all", asyncHandler(discountController.getAllDiscountCodes));
-router.post("/delete", asyncHandler(discountController.deleteDiscount));
+router.delete("/delete", asyncHandler(discountController.deleteDiscount));
 router.patch("/cancel", asyncHandler(discountController.cancelDiscount));
 router.patch("/update", asyncHandler(discountController.updateDiscount));
 
