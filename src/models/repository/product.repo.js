@@ -117,6 +117,42 @@ const getProductById = async ({ productId }) => {
     .lean();
 };
 
+// const checkProductByServer = async (products) => {
+//   return await Promise.all(
+//     products.map(async (product) => {
+//       const foundProduct = await getProductById({
+//         productId: product.productId,
+//       });
+//       if (foundProduct) {
+//         return {
+//           price: foundProduct.product_price,
+//           quantity: foundProduct.product_quantity,
+//           productId: product.productId,
+//         };
+//       }
+//     })
+//   );
+// };
+
+const checkProductByServer = async (products) => {
+  return await Promise.all(
+    products.map(async (product) => {
+      const foundProduct = await getProductById({
+        productId: product.productId,
+      });
+      if (foundProduct) {
+        return {
+          price: foundProduct.product_price,
+          quantity: product.quantity, // Use the requested quantity, not product_quantity
+          productId: product.productId,
+          // name: foundProduct.product_name,
+          // shop_id: foundProduct.product_shop,
+        };
+      }
+    })
+  );
+};
+
 const queryListProducts = async ({ query, limit, skip }) => {
   return await product
     .find(query)
@@ -137,4 +173,5 @@ module.exports = {
   findDetailProduct,
   updateProductById,
   getProductById,
+  checkProductByServer,
 };

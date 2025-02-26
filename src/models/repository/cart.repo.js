@@ -143,6 +143,7 @@
 //   removeItemFromCart,
 // };
 
+const { convertToObjectId } = require("../../utils");
 const cartModel = require("../cart.model");
 
 const createUserCart = async ({ userId, product }) => {
@@ -224,8 +225,18 @@ const removeItemFromCart = async ({ user_id, product_id }) => {
   return deleted;
 };
 
+const findCartById = async (cartId) => {
+  return await cartModel
+    .findOne({
+      _id: convertToObjectId(cartId),
+      cart_state: "ACTIVE",
+    })
+    .lean();
+};
+
 module.exports = {
   createUserCart,
   updateCartItemQuantity,
   removeItemFromCart,
+  findCartById,
 };
