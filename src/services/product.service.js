@@ -18,7 +18,7 @@ const {
   furniture,
 } = require("../models/product.model");
 const { removeUndefinedObject, updateNestedObject } = require("../utils");
-const { insertInventory } = require("../models/repository/invetory.repo");
+const { insertInventory } = require("../models/repository/inventory.repo");
 const TYPES = {
   Electronics: "Electronics",
   Clothing: "Clothing",
