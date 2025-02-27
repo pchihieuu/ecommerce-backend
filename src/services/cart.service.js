@@ -288,6 +288,18 @@ class CartService {
       product_id,
     });
   }
+  static async removeAllProductsFromCart({ cartId, userId }) {
+    const query = {
+      cart_user_id: convertToObjectId(userId),
+    };
+    const updateSet = {
+      $set: {
+        cart_products: [],
+        cart_count_product: 0,
+      },
+    };
+    return await cartModel.findOneAndUpdate(query, updateSet, { new: true });
+  }
 }
 
 module.exports = CartService;

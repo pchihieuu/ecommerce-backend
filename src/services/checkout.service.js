@@ -229,6 +229,9 @@ const { checkProductByServer } = require("../models/repository/product.repo");
 const { BadRequestRespone } = require("../core/error.respone");
 const { findCartById } = require("../models/repository/cart.repo");
 const { getDiscountAmount } = require("./discount.service");
+const { acquireLock, releaseLock } = require("./redis.service");
+const orderModel = require("../models/order.model");
+const { removeAllProductsFromCart } = require("./cart.service");
 
 class CheckoutService {
   /*
@@ -353,6 +356,75 @@ class CheckoutService {
       checkout_order, // Summary of all pricing
     };
   }
+
+  static async orderByUser({
+    shop_order_ids,
+    cartId,
+    userId,
+    user_address = {},
+    user_payment = {},
+  }) {
+    const { shop_order_ids_new, checkout_order } =
+      await CheckoutService.checkoutReview({
+        cartId,
+        userId,
+        shop_order_ids,
+      });
+    // check lai 1 lan nua xem vuot ton kho hay khong?
+    // get new array product
+    const products = shop_order_ids_new.flatMap((order) => order.item_products);
+    console.log(`[1]::`, products);
+    const acquireProduct = [];
+    for (let i = 0; i < products.length; i++) {
+      const { productId, quantity } = products[i];
+      const keyClock = await acquireLock({ productId, quantity, cartId });
+      acquireProduct.push(keyClock ? true : false);
+
+      if (keyClock) {
+        await releaseLock(keyClock);
+      }
+    }
+    // neu co 1 san pham het hang trong kho?
+    if (acquireProduct.includes(false)) {
+      throw new BadRequestRespone(
+        "Some products have been updated, please return to the cart"
+      );
+    }
+    // Neu thanh cong het => tao mot new order
+    const newOrder = await orderModel.create({
+      order_user_id: userId,
+      order_checkout: checkout_order,
+      order_shipping: user_address,
+      order_payment: user_payment,
+      order_products: shop_order_ids_new,
+    });
+
+    // await newOrder.save();
+    // neu insert thanh cong thi remove product co trong cart
+    if (newOrder) {
+      // remove product in mycart
+      await removeAllProductsFromCart({ cartId, userId });
+    }
+
+    return newOrder;
+  }
+  
+
+  
+  // User lay nhieu order da dat
+  
+  
+  static async getOrdersByUser({}) {}
+
+  // User lay mot order da dat
+  static async getOrderByUser({}) {}
+
+  // User cancel order
+  static async cancelOrderByUser({}) {}
+
+  // Cap nhat order
+  // Luu y: Cap nhat status van chuyen la do he thong + 3rd-party chu khong phai do shop
+  static async updateOrderByShop({}) {}
 }
 
 module.exports = CheckoutService;
