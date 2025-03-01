@@ -1,15 +1,16 @@
 "use strict";
 
-const { convertToObjectId } = require("../utils");
-const commentModel = require("../models/comment.model");
-const { NotFoundRespone } = require("../core/error.respone");
+const { getProductById } = require("../models/repository/product.repo");
+const CommentRepository = require("../models/repository/comment.repo");
+const { NotFoundRespone, ForbiddenRespone } = require("../core/error.respone");
 
 /**
- * key features: Comment service
-   + add comment [User, Shop]
-   + get a list of comments [User, Shop]
-   + delete a comment [Admin, Shop]
- * 
+ * Key features: Comment service
+ * + add comment [User, Shop]
+ * + get a list of comments [User, Shop]
+ * + update comment [User - only own comments]
+ * + delete a comment [User - only own comments]
+ * + soft delete vs hard delete comments
  */
 
 class CommentService {
@@ -19,63 +20,44 @@ class CommentService {
     content,
     parentCommentId = null,
   }) {
-    const comment = new commentModel({
+    // Validate product exists
+    const product = await getProductById({ productId });
+    if (!product) throw new NotFoundRespone("Product not found");
+
+    // Create comment payload
+    const commentPayload = {
       comment_productId: productId,
       comment_userId: userId,
       comment_content: content,
       comment_parentId: parentCommentId,
-    });
+    };
 
     let rightValue;
     if (parentCommentId) {
-      // reply comment
-      const parentComment = await commentModel.findById(parentCommentId);
+      // Reply to comment
+      const parentComment = await CommentRepository.findById(parentCommentId);
       if (!parentComment) throw new NotFoundRespone("Parent comment not found");
+      if (parentComment.isDeleted)
+        throw new NotFoundRespone("Cannot reply to a deleted comment");
+
       rightValue = parentComment.comment_right;
 
-      // updateMany comments
-      await Promise.all([
-        commentModel.updateMany(
-          {
-            comment_productId: convertToObjectId(productId),
-            comment_right: { $gte: rightValue },
-          },
-          {
-            $inc: { comment_right: 2 },
-          }
-        ),
-
-        commentModel.updateMany(
-          {
-            comment_productId: convertToObjectId(productId),
-            comment_left: { $gt: rightValue },
-          },
-          {
-            $inc: { comment_left: 2 },
-          }
-        ),
-      ]);
+      // Update existing comments
+      await CommentRepository.updateCommentsOnInsert(productId, rightValue);
     } else {
-      const maxRightValue = await commentModel.findOne(
-        {
-          comment_productId: convertToObjectId(productId),
-        },
-        "comment_right",
-        { sort: { comment_right: -1 } }
+      // Root level comment
+      const maxRightValue = await CommentRepository.findMaxRightValue(
+        productId
       );
-      if (maxRightValue) {
-        rightValue = maxRightValue.comment_right + 1;
-      } else {
-        rightValue = 1;
-      }
+      rightValue = maxRightValue ? maxRightValue.comment_right + 1 : 1;
     }
 
-    // insert comment
-    comment.comment_left = rightValue;
-    comment.comment_right = rightValue + 1;
+    // Set left and right values for Nested Set Model
+    commentPayload.comment_left = rightValue;
+    commentPayload.comment_right = rightValue + 1;
 
-    await comment.save();
-    return comment;
+    // Save comment
+    return await CommentRepository.createComment(commentPayload);
   }
 
   static async getCommentsByParentId({
@@ -84,47 +66,68 @@ class CommentService {
     limit = 50,
     offset = 0,
   }) {
-    if (parentCommentId) {
-      const parent = await commentModel.findById(parentCommentId);
-      if (!parent) throw new NotFoundRespone("Not found comment for product");
+    // Validate product exists
+    const product = await getProductById({ productId });
+    if (!product) throw new NotFoundRespone("Product not found");
 
-      const comments = await commentModel
-        .find({
-          // comment_parentId: convertToObjectId(parentCommentId),
-          comment_productId: convertToObjectId(productId),
-          comment_left: { $gt: parent.comment_left },
-          comment_right: { $lt: parent.comment_right },
-        })
-        .select({
-          comment_left: 1,
-          comment_right: 1,
-          comment_content: 1,
-          // comment_userId: 1,
-          comment_parentId: 1,
-        })
-        .skip(offset)
-        .limit(limit)
-        .sort({ comment_left: 1 });
+    return await CommentRepository.getCommentsByParentId({
+      productId,
+      parentId: parentCommentId,
+      limit,
+      offset,
+    });
+  }
 
-      return comments;
+  static async updateComment({ commentId, userId, content }) {
+    // Check if comment exists and belongs to user
+    const comment = await CommentRepository.findByIdAndUserId(
+      commentId,
+      userId
+    );
+    if (!comment)
+      throw new NotFoundRespone(
+        "Comment not found or you don't have permission to update"
+      );
+
+    // Update comment content
+    return await CommentRepository.updateComment(commentId, content);
+  }
+
+  static async deleteComment({ commentId, productId, userId }) {
+    // Check if the product exists
+    const product = await getProductById({ productId });
+    if (!product) throw new NotFoundRespone("Product not found");
+
+    // Find the comment
+    const comment = await CommentRepository.findById(commentId);
+    if (!comment) throw new NotFoundRespone("Comment not found");
+
+    // Authorization check - only comment owner can delete their own comment
+    if (comment.comment_userId.toString() !== userId.toString()) {
+      throw new ForbiddenRespone(
+        "You don't have permission to delete this comment"
+      );
     }
-    const comments = await commentModel
-      .find({
-        comment_parentId: parentCommentId,
-        comment_productId: convertToObjectId(productId),
-      })
-      .select({
-        comment_left: 1,
-        comment_right: 1,
-        comment_content: 1,
-        // comment_userId: 1,
-        comment_parentId: 1,
-      })
-      .skip(offset)
-      .limit(limit)
-      .sort({ comment_left: 1 });
 
-    return comments;
+    const left = comment.comment_left;
+    const right = comment.comment_right;
+    const width = right - left + 1;
+
+    // Implement soft delete by setting isDeleted flag
+    await CommentRepository.markCommentsAsDeleted(productId, left, right);
+
+    // Update left and right values for remaining comments
+    await CommentRepository.updateCommentsOnDelete(productId, left, width);
+
+    return true;
+  }
+
+  static async countComments(productId) {
+    // Additional utility method to count comments for a product
+    const product = await getProductById({ productId });
+    if (!product) throw new NotFoundRespone("Product not found");
+
+    return await CommentRepository.countByProductId(productId);
   }
 }
 
