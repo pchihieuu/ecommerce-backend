@@ -17,6 +17,11 @@ app.use(
   })
 );
 
+// test redis
+require("./tests/inventory.test");
+const productTest = require("./tests/product.test");
+productTest.purchaseProduct("productId:001", 10);
+
 // intit db
 require("./db/mongodb");
 
