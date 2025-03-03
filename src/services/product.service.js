@@ -17,8 +17,14 @@ const {
   electronic,
   furniture,
 } = require("../models/product.model");
-const { removeUndefinedObject, updateNestedObject } = require("../utils");
+const {
+  removeUndefinedObject,
+  updateNestedObject,
+  convertToObjectId,
+} = require("../utils");
 const { insertInventory } = require("../models/repository/inventory.repo");
+const { pushNotiToSystem } = require("./notification.service");
+
 const TYPES = {
   Electronics: "Electronics",
   Clothing: "Clothing",
@@ -127,6 +133,19 @@ class Product {
         stock: newProduct.product_quantity,
         location: "Tp.Ho Chi Minh. Vietnam",
       });
+      // noti new product is created here
+      // push noti to noti system
+      pushNotiToSystem({
+        type: "SHOP-001",
+        senderId: this.product_shop,
+        receivedId: 1,
+        options: {
+          product_name: this.product_name,
+          shop_name: this.product_shop,
+        },
+      })
+        .then((res) => console.log(res))
+        .catch(console.error);
     }
     return newProduct;
   }
