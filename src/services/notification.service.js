@@ -52,7 +52,13 @@ class NotificationService {
         $project: {
           noti_type: 1,
           noti_senderId: 1,
-          noti_content: 1,
+          noti_content: {
+            $concat: [
+              "$noti_options.shop_name",
+              " vừa mới thêm một sản phẩm mới: ",
+              "$noti_options.product_name",
+            ],
+          },
           noti_options: 1,
           noti_receivedId: 1,
           createdAt: 1,
