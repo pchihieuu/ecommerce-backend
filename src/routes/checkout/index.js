@@ -12,5 +12,13 @@ router.post(
   asyncHandler(checkoutController.checkoutReview)
 );
 
+router.post("/order", asyncHandler(checkoutController.orderByUser));
+router.get("/", asyncHandler(checkoutController.getOrdersByUser));
+router.get("/detail", asyncHandler(checkoutController.getOrderByUser));
+router.patch("/cancel", asyncHandler(checkoutController.cancelOrderByUser));
+router.patch(
+  "/:orderId/update",
 
+  asyncHandler(checkoutController.updateOrderByShop)
+);
 module.exports = router;
