@@ -4,38 +4,38 @@ const StatusCode = {
   FORBIDEN: 403,
   CONFLICT: 400,
 };
-const MessageRespone = {
+const MessageResponse = {
   FORBIDEN: "Bad Request",
   CONFLICT: "Conflict Error",
 };
 
 const { StatusCodes, ReasonPhrases } = require("../utils/httpStatusCode");
 
-class ErrorRespone extends Error {
+class ErrorResponse extends Error {
   constructor(message, status) {
     super(message);
     this.status = status;
   }
 }
 
-class ConflictRespone extends ErrorRespone {
+class ConflictResponse extends ErrorResponse {
   constructor(
-    message = MessageRespone.CONFLICT,
+    message = MessageResponse.CONFLICT,
     statusCode = StatusCode.CONFLICT
   ) {
     super(message, statusCode);
   }
 }
-class BadRequestRespone extends ErrorRespone {
+class BadRequestResponse extends ErrorResponse {
   constructor(
-    message = MessageRespone.FORBIDEN,
+    message = MessageResponse.FORBIDEN,
     statusCode = StatusCode.FORBIDEN
   ) {
     super(message, statusCode);
   }
 }
 
-class AuthFailureRespone extends ErrorRespone {
+class AuthFailureResponse extends ErrorResponse {
   constructor(
     message = ReasonPhrases.UNAUTHORIZED,
     statusCode = StatusCodes.UNAUTHORIZED
@@ -44,7 +44,7 @@ class AuthFailureRespone extends ErrorRespone {
   }
 }
 
-class NotFoundRespone extends ErrorRespone {
+class NotFoundResponse extends ErrorResponse {
   constructor(
     message = ReasonPhrases.NOT_FOUND,
     statusCode = StatusCode.NOT_FOUND
@@ -52,7 +52,7 @@ class NotFoundRespone extends ErrorRespone {
     super(message, statusCode);
   }
 }
-class ForbiddenRespone extends ErrorRespone {
+class ForbiddenResponse extends ErrorResponse {
   constructor(
     message = ReasonPhrases.FORBIDDEN,
     statusCode = StatusCodes.FORBIDDEN
@@ -61,9 +61,9 @@ class ForbiddenRespone extends ErrorRespone {
   }
 }
 module.exports = {
-  ConflictRespone,
-  BadRequestRespone,
-  AuthFailureRespone,
-  NotFoundRespone,
-  ForbiddenRespone,
+  ConflictResponse,
+  BadRequestResponse,
+  AuthFailureResponse,
+  NotFoundResponse,
+  ForbiddenResponse,
 };

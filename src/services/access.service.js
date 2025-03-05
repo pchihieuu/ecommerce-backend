@@ -7,10 +7,10 @@ const KeyTokenService = require("./keyToken.service");
 const { createTokenPair, verifyJWT } = require("../auth/authUtils");
 const { getInfoData } = require("../utils");
 const {
-  BadRequestRespone,
-  AuthFailureRespone,
-  ForbiddenRespone,
-} = require("../core/error.respone");
+  BadRequestResponse,
+  AuthFailureResponse,
+  ForbiddenResponse,
+} = require("../core/error.response");
 const { ValidationUtils } = require("../utils/validation");
 const { findByEmail } = require("./shop.service");
 const RoleShop = {
@@ -26,15 +26,15 @@ class AccessService {
     const { userId, email } = user;
     if (keyStore.refreshTokensUsed.includes(refreshToken)) {
       await KeyTokenService.deleteKeyByUserId(userId);
-      throw new ForbiddenRespone("Something wrong happened!! Please relogin");
+      throw new BadRequestResponse("Something wrong happened!! Please relogin");
     }
     if (keyStore.refreshToken !== refreshToken) {
-      throw new AuthFailureRespone("Shop not registered");
+      throw new AuthFailureResponse("Shop not registered");
     }
     // check userId, email
     const foundShop = await findByEmail({ email });
     if (!foundShop) {
-      throw new AuthFailureRespone("Shop not registerred");
+      throw new AuthFailureResponse("Shop not registerred");
     }
     // neu thoa man hop le
     // 1. create cap token moi
@@ -73,14 +73,16 @@ class AccessService {
 
       if (userId && email) {
         await KeyTokenService.deleteKeyByUserId(userId);
-        throw new ForbiddenRespone("Something wrong happened!! Please relogin");
+        throw new ForbiddenResponse(
+          "Something wrong happened!! Please relogin"
+        );
       }
     }
 
     // neu refreshToken chua het han, kiem tra xem refreshToken co phai do he thong tao hay khong
     const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
     if (!holderToken) {
-      throw new AuthFailureRespone("Shop not registerred");
+      throw new AuthFailureResponse("Shop not registerred");
     }
 
     // verify token
@@ -92,7 +94,7 @@ class AccessService {
     // check userId, email
     const foundShop = await findByEmail({ email });
     if (!foundShop) {
-      throw new AuthFailureRespone("Shop not registerred");
+      throw new AuthFailureResponse("Shop not registerred");
     }
 
     // neu thoa man hop le
@@ -132,11 +134,11 @@ class AccessService {
   static signIn = async ({ email, password, refreshToken = null }) => {
     // 1. check email dbs
     const foundShop = await findByEmail({ email });
-    if (!foundShop) throw new BadRequestRespone("Shop not registered!");
+    if (!foundShop) throw new BadRequestResponse("Shop not registered!");
 
     // 2. match password
     const match = await bcrypt.compare(password, foundShop.password);
-    if (!match) throw new AuthFailureRespone("Authentication error");
+    if (!match) throw new AuthFailureResponse("Authentication error");
 
     // 3. create private and public key
     const privateKey = crypto.randomBytes(64).toString("hex");
@@ -174,7 +176,7 @@ class AccessService {
     // Check if shop already exists
     const holderShop = await shopModel.findOne({ email }).lean();
     if (holderShop) {
-      throw new BadRequestRespone("Shop already registered ");
+      throw new BadRequestResponse("Shop already registered ");
     }
 
     // Create new shop with hashed password
@@ -198,7 +200,7 @@ class AccessService {
       });
 
       if (!keyStore) {
-        throw new BadRequestRespone("Keystore tis error");
+        throw new BadRequestResponse("Keystore tis error");
         // throw new Error("keyStore is error");
       }
 

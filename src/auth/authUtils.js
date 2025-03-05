@@ -4,9 +4,9 @@ const JWT = require("jsonwebtoken");
 const HEADERS = require("../constants/headers.constant");
 const { asyncHandler } = require("../helpers/asyncHandler");
 const {
-  AuthFailureRespone,
-  NotFoundRespone,
-} = require("../core/error.respone");
+  AuthFailureResponse,
+  NotFoundResponse,
+} = require("../core/error.response");
 const { findByUserId } = require("../services/keyToken.service");
 
 const createTokenPair = async (payload, publicKey, privateKey) => {
@@ -48,20 +48,20 @@ const authentication = asyncHandler(async (req, res, next) => {
    */
   const userId = req.headers[HEADERS.CLIENT_ID];
   if (!userId) {
-    throw new AuthFailureRespone("Invalid Request");
+    throw new AuthFailureResponse("Invalid Request");
   }
   const keyStore = await findByUserId(userId);
   if (!keyStore) {
-    throw new NotFoundRespone("Not Found");
+    throw new NotFoundResponse("Not Found");
   }
   const accessToken = req.headers[HEADERS.AUTHORIZATION];
   if (!accessToken) {
-    throw new AuthFailureRespone("Invalid Request");
+    throw new AuthFailureResponse("Invalid Request");
   }
   try {
     const decodeUser = JWT.verify(accessToken, keyStore.publicKey);
     if (userId !== decodeUser.userId) {
-      throw new NotFoundRespone("Not Found");
+      throw new NotFoundResponse("Not Found");
     }
     req.keyStore = keyStore;
     req.userId = decodeUser;
@@ -73,10 +73,10 @@ const authentication = asyncHandler(async (req, res, next) => {
 
 const authenticationV2 = asyncHandler(async (req, res, next) => {
   const userId = req.headers[HEADERS.CLIENT_ID];
-  if (!userId) throw new AuthFailureRespone("Invalid request");
+  if (!userId) throw new AuthFailureResponse("Invalid request");
 
   const keyStore = await findByUserId(userId);
-  if (!keyStore) throw new NotFoundRespone("KeyStore not found");
+  if (!keyStore) throw new NotFoundResponse("KeyStore not found");
 
   // Kiểm tra access token trước
   if (req.headers[HEADERS.AUTHORIZATION]) {
@@ -84,12 +84,12 @@ const authenticationV2 = asyncHandler(async (req, res, next) => {
       const accessToken = req.headers[HEADERS.AUTHORIZATION];
       const decodeUser = JWT.verify(accessToken, keyStore.publicKey);
       if (userId !== decodeUser.userId)
-        throw new AuthFailureRespone("Invalid userid");
+        throw new AuthFailureResponse("Invalid userid");
       req.keyStore = keyStore;
       req.user = decodeUser;
       return next();
     } catch (error) {
-      throw new AuthFailureRespone("Invalid access token");
+      throw new AuthFailureResponse("Invalid access token");
     }
   }
 
@@ -99,18 +99,18 @@ const authenticationV2 = asyncHandler(async (req, res, next) => {
       const refreshToken = req.headers[HEADERS.REFRESH_TOKEN];
       const decodeUser = JWT.verify(refreshToken, keyStore.privateKey);
       if (userId !== decodeUser.userId)
-        throw new AuthFailureRespone("Invalid userid");
+        throw new AuthFailureResponse("Invalid userid");
       req.keyStore = keyStore;
       req.user = decodeUser;
       req.refreshToken = refreshToken;
       return next();
     } catch (error) {
-      throw new AuthFailureRespone("Invalid refresh token");
+      throw new AuthFailureResponse("Invalid refresh token");
     }
   }
 
   // Nếu không có token nào
-  throw new AuthFailureRespone("Access token or refresh token required");
+  throw new AuthFailureResponse("Access token or refresh token required");
 });
 
 const verifyJWT = async (token, keySecret) => {

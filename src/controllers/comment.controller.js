@@ -1,6 +1,6 @@
 "use strict";
 
-const { SuccessRespone } = require("../core/success.respone");
+const { SuccessResponse } = require("../core/success.response");
 const CommentService = require("../services/comment.service");
 
 class CommentController {
@@ -8,7 +8,7 @@ class CommentController {
     // Add userId from authenticated user
     const { productId, content, parentCommentId } = req.body;
 
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Create comment successful!",
       metadata: await CommentService.createComment({
         productId,
@@ -20,7 +20,7 @@ class CommentController {
   }
 
   async getCommentsByParentId(req, res, next) {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "List comments for product",
       metadata: await CommentService.getCommentsByParentId(req.query),
     }).send(res);
@@ -29,7 +29,7 @@ class CommentController {
   async updateComment(req, res, next) {
     const { commentId, content } = req.body;
 
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Update comment successful!",
       metadata: await CommentService.updateComment({
         commentId,
@@ -42,7 +42,7 @@ class CommentController {
   async deleteComment(req, res, next) {
     const { commentId, productId } = req.body;
 
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Delete comment successful!",
       metadata: await CommentService.deleteComment({
         commentId,
@@ -55,7 +55,7 @@ class CommentController {
   async countComments(req, res, next) {
     const { productId } = req.query;
 
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Count comments successful!",
       metadata: await CommentService.countComments(productId),
     }).send(res);

@@ -2,7 +2,10 @@
 
 const { getProductById } = require("../models/repository/product.repo");
 const CommentRepository = require("../models/repository/comment.repo");
-const { NotFoundRespone, ForbiddenRespone } = require("../core/error.respone");
+const {
+  NotFoundResponse,
+  ForbiddenResponse,
+} = require("../core/error.response");
 
 /**
  * Key features: Comment service
@@ -22,7 +25,7 @@ class CommentService {
   }) {
     // Validate product exists
     const product = await getProductById({ productId });
-    if (!product) throw new NotFoundRespone("Product not found");
+    if (!product) throw new NotFoundResponse("Product not found");
 
     // Create comment payload
     const commentPayload = {
@@ -36,9 +39,10 @@ class CommentService {
     if (parentCommentId) {
       // Reply to comment
       const parentComment = await CommentRepository.findById(parentCommentId);
-      if (!parentComment) throw new NotFoundRespone("Parent comment not found");
+      if (!parentComment)
+        throw new NotFoundResponse("Parent comment not found");
       if (parentComment.isDeleted)
-        throw new NotFoundRespone("Cannot reply to a deleted comment");
+        throw new NotFoundResponse("Cannot reply to a deleted comment");
 
       rightValue = parentComment.comment_right;
 
@@ -68,7 +72,7 @@ class CommentService {
   }) {
     // Validate product exists
     const product = await getProductById({ productId });
-    if (!product) throw new NotFoundRespone("Product not found");
+    if (!product) throw new NotFoundResponse("Product not found");
 
     return await CommentRepository.getCommentsByParentId({
       productId,
@@ -85,7 +89,7 @@ class CommentService {
       userId
     );
     if (!comment)
-      throw new NotFoundRespone(
+      throw new NotFoundResponse(
         "Comment not found or you don't have permission to update"
       );
 
@@ -96,15 +100,15 @@ class CommentService {
   static async deleteComment({ commentId, productId, userId }) {
     // Check if the product exists
     const product = await getProductById({ productId });
-    if (!product) throw new NotFoundRespone("Product not found");
+    if (!product) throw new NotFoundResponse("Product not found");
 
     // Find the comment
     const comment = await CommentRepository.findById(commentId);
-    if (!comment) throw new NotFoundRespone("Comment not found");
+    if (!comment) throw new NotFoundResponse("Comment not found");
 
     // Authorization check - only comment owner can delete their own comment
     if (comment.comment_userId.toString() !== userId.toString()) {
-      throw new ForbiddenRespone(
+      throw new ForbiddenResponse(
         "You don't have permission to delete this comment"
       );
     }
@@ -125,7 +129,7 @@ class CommentService {
   static async countComments(productId) {
     // Additional utility method to count comments for a product
     const product = await getProductById({ productId });
-    if (!product) throw new NotFoundRespone("Product not found");
+    if (!product) throw new NotFoundResponse("Product not found");
 
     return await CommentRepository.countByProductId(productId);
   }
