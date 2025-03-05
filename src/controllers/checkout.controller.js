@@ -43,7 +43,12 @@ class CheckoutController {
   }
 
   async cancelOrderByUser(req, res, next) {
-    const { userId, orderId } = req.query;
+    const userId = req.body.userId || req.query.userId;
+    const orderId = req.body.orderId || req.query.orderId;
+
+    if (!userId || !orderId) {
+      throw new BadRequestResponse("User ID and Order ID are required");
+    }
 
     new SuccessResponse({
       message: "Order canceled successfully",

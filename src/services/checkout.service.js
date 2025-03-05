@@ -8,7 +8,7 @@ const { acquireLock, releaseLock } = require("./redis.service");
 const orderModel = require("../models/order.model");
 const { removeAllProductsFromCart } = require("./cart.service");
 const { convertToObjectId } = require("../utils");
-
+const { product } = require("../models/product.model");
 class CheckoutService {
   static async checkoutReview({ cartId, userId, shop_order_ids }) {
     // Validate cart exists
@@ -117,6 +117,31 @@ class CheckoutService {
     // Flatten products and check inventory
     const products = shop_order_ids_new.flatMap((order) => order.item_products);
 
+    // Validate and reduce product quantities
+    const updateProductPromises = products.map(async (productItem) => {
+      const foundProduct = await product.findById(productItem.productId);
+
+      if (!foundProduct) {
+        throw new BadRequestResponse(
+          `Product ${productItem.productId} not found`
+        );
+      }
+
+      // Kiểm tra số lượng sản phẩm
+      if (foundProduct.product_quantity < productItem.quantity) {
+        throw new BadRequestResponse(
+          `Insufficient quantity for product ${foundProduct.product_name}`
+        );
+      }
+
+      // Giảm số lượng sản phẩm
+      foundProduct.product_quantity -= productItem.quantity;
+      await foundProduct.save();
+
+      return foundProduct;
+    });
+    // Thực hiện giảm số lượng sản phẩm
+    await Promise.all(updateProductPromises);
     // Lock products and check inventory
     const lockResults = await Promise.all(
       products.map(async (product) => {
@@ -129,10 +154,19 @@ class CheckoutService {
       })
     );
 
-    // Check if all products can be locked
     const failedLocks = lockResults.filter(({ keyClock }) => !keyClock);
     if (failedLocks.length > 0) {
-      // Release any successfully acquired locks
+      // Hoàn lại số lượng sản phẩm nếu lock thất bại
+      await Promise.all(
+        updateProductPromises.map(async (productPromise) => {
+          const foundProduct = await productPromise;
+          foundProduct.product_quantity += failedLocks.find(
+            (fail) => fail.product.productId === foundProduct._id.toString()
+          ).product.quantity;
+          await foundProduct.save();
+        })
+      );
+
       await Promise.all(
         lockResults
           .filter(({ keyClock }) => keyClock)
@@ -151,6 +185,7 @@ class CheckoutService {
       order_shipping: user_address,
       order_payment: user_payment,
       order_products: shop_order_ids_new,
+      order_status: "PROCESSING", // Thêm trạng thái ban đầu
     });
 
     // Remove products from cart if order is successful
@@ -216,11 +251,34 @@ class CheckoutService {
   }
 
   static async cancelOrderByUser({ userId, orderId }) {
-    if (!userId || !orderId) {
-      throw new BadRequestResponse("User ID and Order ID are required");
+    // Tìm order
+    const order = await orderModel.findOne({
+      _id: convertToObjectId(orderId),
+      order_user_id: convertToObjectId(userId),
+      order_status: { $in: ["PENDING", "PROCESSING"] },
+    });
+
+    if (!order) {
+      throw new BadRequestResponse(
+        "Cannot cancel this order. It may have already been processed."
+      );
     }
 
-    const order = await orderModel.findOneAndUpdate(
+    // Hoàn lại số lượng sản phẩm
+    const rollbackPromises = order.order_products.map(async (shopOrder) => {
+      for (const productItem of shopOrder.item_products) {
+        // Tìm và cập nhật lại số lượng sản phẩm
+        await product.findByIdAndUpdate(productItem.productId, {
+          $inc: { product_quantity: +productItem.quantity },
+        });
+      }
+    });
+
+    // Chờ hoàn tất việc hoàn số lượng
+    await Promise.all(rollbackPromises);
+
+    // Cập nhật trạng thái đơn hàng
+    const updatedOrder = await orderModel.findOneAndUpdate(
       {
         _id: convertToObjectId(orderId),
         order_user_id: convertToObjectId(userId),
@@ -233,16 +291,7 @@ class CheckoutService {
       { new: true }
     );
 
-    if (!order) {
-      throw new BadRequestResponse(
-        "Cannot cancel this order. It may have already been processed."
-      );
-    }
-
-    // TODO: Implement inventory rollback logic here
-    // Hoàn lại số lượng sản phẩm vào kho
-
-    return order;
+    return updatedOrder;
   }
 }
 

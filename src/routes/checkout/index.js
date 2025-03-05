@@ -15,7 +15,7 @@ router.post(
 router.post("/order", asyncHandler(checkoutController.orderByUser));
 router.get("/", asyncHandler(checkoutController.getOrdersByUser));
 router.get("/detail", asyncHandler(checkoutController.getOrderByUser));
-router.patch("/cancel", asyncHandler(checkoutController.cancelOrderByUser));
+router.post("/cancel", asyncHandler(checkoutController.cancelOrderByUser));
 router.patch(
   "/:orderId/update",
 
