@@ -1,7 +1,7 @@
 "use strict";
 
 const inventoryModel = require("../models/inventory.model");
-const { BadRequestRespone } = require("../core/error.respone");
+const { BadRequestResponse } = require("../core/error.response");
 const { getProductById } = require("../models/repository/product.repo");
 
 class InventoryService {
@@ -12,7 +12,7 @@ class InventoryService {
     location = "Vuon Lai, District 12, HoChiMinh City",
   }) {
     const product = await getProductById({ productId });
-    if (!product) throw new BadRequestRespone("Product doest not exist");
+    if (!product) throw new BadRequestResponse("Product doest not exist");
 
     const query = {
         inventory_shop_id: shopId,

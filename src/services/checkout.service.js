@@ -1,7 +1,7 @@
 "use strict";
 
 const { checkProductByServer } = require("../models/repository/product.repo");
-const { BadRequestRespone } = require("../core/error.respone");
+const { BadRequestResponse } = require("../core/error.response");
 const { findCartById } = require("../models/repository/cart.repo");
 const { getDiscountAmount } = require("./discount.service");
 const { acquireLock, releaseLock } = require("./redis.service");
@@ -13,7 +13,7 @@ class CheckoutService {
   static async checkoutReview({ cartId, userId, shop_order_ids }) {
     // Validate cart exists
     const foundCart = await findCartById(cartId);
-    if (!foundCart) throw new BadRequestRespone("Cart does not exist");
+    if (!foundCart) throw new BadRequestResponse("Cart does not exist");
 
     // Initialize checkout data structures
     const checkout_order = {
@@ -38,7 +38,7 @@ class CheckoutService {
         item_products.map(async (product) => {
           const validatedProduct = await checkProductByServer([product]);
           if (!validatedProduct || validatedProduct.length === 0) {
-            throw new BadRequestRespone(
+            throw new BadRequestResponse(
               `Product ${product.productId} is invalid`
             );
           }
@@ -139,7 +139,7 @@ class CheckoutService {
           .map(({ keyClock }) => releaseLock(keyClock))
       );
 
-      throw new BadRequestRespone(
+      throw new BadRequestResponse(
         "Some products are out of stock or have been updated. Please check your cart."
       );
     }
@@ -169,7 +169,7 @@ class CheckoutService {
   static async getOrdersByUser({ userId, limit = 10, page = 1 }) {
     // Validate userId
     if (!userId) {
-      throw new BadRequestRespone("User ID is required");
+      throw new BadRequestResponse("User ID is required");
     }
 
     const skip = (page - 1) * limit;
@@ -198,7 +198,7 @@ class CheckoutService {
 
   static async getOrderByUser({ userId, orderId }) {
     if (!userId || !orderId) {
-      throw new BadRequestRespone("User ID and Order ID are required");
+      throw new BadRequestResponse("User ID and Order ID are required");
     }
 
     const order = await orderModel
@@ -209,7 +209,7 @@ class CheckoutService {
       .lean();
 
     if (!order) {
-      throw new BadRequestRespone("Order not found");
+      throw new BadRequestResponse("Order not found");
     }
 
     return order;
@@ -217,7 +217,7 @@ class CheckoutService {
 
   static async cancelOrderByUser({ userId, orderId }) {
     if (!userId || !orderId) {
-      throw new BadRequestRespone("User ID and Order ID are required");
+      throw new BadRequestResponse("User ID and Order ID are required");
     }
 
     const order = await orderModel.findOneAndUpdate(
@@ -234,7 +234,7 @@ class CheckoutService {
     );
 
     if (!order) {
-      throw new BadRequestRespone(
+      throw new BadRequestResponse(
         "Cannot cancel this order. It may have already been processed."
       );
     }

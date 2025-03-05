@@ -1,6 +1,6 @@
 "use strict";
 
-const { BadRequestRespone } = require("../core/error.respone");
+const { BadRequestResponse } = require("../core/error.response");
 
 class ValidationUtils {
   static validateEmail(email) {
@@ -10,7 +10,8 @@ class ValidationUtils {
 
   static validatePassword(password) {
     // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
     return passwordRegex.test(password);
   }
 
@@ -23,13 +24,14 @@ class ValidationUtils {
 
     if (!this.validatePassword(password)) {
       errors.push(
-        "Password must be least 8 characters long and contain uppercase, lowercase and numeric characters")
+        "Password must be least 8 characters long and contain uppercase, lowercase and numeric characters"
+      );
     }
 
     if (errors.length > 0) {
-      throw new BadRequestRespone(errors.join(", "));
+      throw new BadRequestResponse(errors.join(", "));
     }
   }
 }
 
-module.exports = {ValidationUtils};
+module.exports = { ValidationUtils };

@@ -1,6 +1,9 @@
 "use strict";
 
-const { BadRequestRespone, NotFoundRespone } = require("../core/error.respone");
+const {
+  BadRequestResponse,
+  NotFoundResponse,
+} = require("../core/error.response");
 const discountModel = require("../models/discount.model");
 const { findAllProducts } = require("../models/repository/product.repo");
 const {
@@ -37,7 +40,7 @@ class DiscountService {
     } = payload;
 
     if (new Date(start_date) >= new Date(end_date)) {
-      throw new BadRequestRespone("Start_date must be before end_date");
+      throw new BadRequestResponse("Start_date must be before end_date");
     }
 
     // create index for discount code
@@ -49,7 +52,7 @@ class DiscountService {
       .lean();
 
     if (foundDiscount && foundDiscount.discount_is_active) {
-      throw new BadRequestRespone("Discount code already exist");
+      throw new BadRequestResponse("Discount code already exist");
     }
 
     const newDiscount = await discountModel.create({
@@ -95,7 +98,7 @@ class DiscountService {
 
     console.log("Found discount:", foundDiscount);
     if (!foundDiscount || !foundDiscount.discount_is_active) {
-      throw new NotFoundRespone("discount not exists");
+      throw new NotFoundResponse("discount not exists");
     }
 
     const { discount_apllied_for, discount_product_ids } = foundDiscount;
@@ -137,7 +140,7 @@ class DiscountService {
       .lean();
 
     if (!foundDiscount || !foundDiscount.discount_is_active) {
-      throw new NotFoundRespone("Discount does not exist or has expired");
+      throw new NotFoundResponse("Discount does not exist or has expired");
     }
     // applied_for === "ALL" or "SPECIFIC"
     const { discount_applied_for, discount_product_ids } = foundDiscount;
@@ -193,7 +196,7 @@ class DiscountService {
       },
     });
 
-    if (!foundDiscount) throw new NotFoundRespone("Discount does not exist");
+    if (!foundDiscount) throw new NotFoundResponse("Discount does not exist");
 
     const {
       discount_is_active,
@@ -206,11 +209,11 @@ class DiscountService {
     } = foundDiscount;
 
     if (!discount_is_active) {
-      throw new NotFoundRespone("Discount expired");
+      throw new NotFoundResponse("Discount expired");
     }
 
     if (!discount_max_uses) {
-      throw new NotFoundRespone("Discount is out");
+      throw new NotFoundResponse("Discount is out");
     }
 
     let totalOrder = 0;
@@ -220,7 +223,7 @@ class DiscountService {
       }, 0);
 
       if (totalOrder < discount_min_order_value) {
-        throw new NotFoundRespone(
+        throw new NotFoundResponse(
           `Discount requires a min order value of ${discount_min_order_value}`
         );
       }
@@ -235,7 +238,7 @@ class DiscountService {
           return item === userId ? total + 1 : total;
         }, 0);
         if (userUsedCount >= discount_max_uses_per_user) {
-          throw new BadRequestRespone("User overused discount");
+          throw new BadRequestResponse("User overused discount");
         }
       }
     }
@@ -270,12 +273,12 @@ class DiscountService {
     });
 
     if (!foundDiscount) {
-      throw new NotFoundRespone("Discount does not exists");
+      throw new NotFoundResponse("Discount does not exists");
     }
     const { discount_is_active } = foundDiscount;
 
     if (!discount_is_active) {
-      throw new BadRequestRespone("Discount expired");
+      throw new BadRequestResponse("Discount expired");
     }
 
     const result = await discountModel.findByIdAndUpdate(foundDiscount._id, {

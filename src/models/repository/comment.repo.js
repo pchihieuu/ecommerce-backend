@@ -2,7 +2,7 @@
 
 const { convertToObjectId } = require("../../utils");
 const commentModel = require("../comment.model");
-const { NotFoundResponse } = require("../../core/error.respone");
+const { NotFoundResponse } = require("../../core/error.response");
 
 class CommentRepository {
   static async createComment(payload) {

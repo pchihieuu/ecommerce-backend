@@ -1,11 +1,11 @@
 "use strict";
 
 const DiscountService = require("../services/discount.service");
-const { SuccessRespone } = require("../core/success.respone");
+const { SuccessResponse } = require("../core/success.response");
 
 class DiscountController {
   createDiscountCode = async (req, res, next) => {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Successful code generations",
       metadata: await DiscountService.createDiscountCode({
         ...req.body,
@@ -15,14 +15,14 @@ class DiscountController {
   };
 
   updateDiscount = async (req, res, next) => {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Success",
       metadata: await DiscountService.updateDiscountCode(req.body),
     }).send(res);
   };
 
   getAllDiscountCodes = async (req, res, next) => {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Successful code found",
       metadata: await DiscountService.getAllDiscountCodeByShop({
         ...req.query,
@@ -32,7 +32,7 @@ class DiscountController {
   };
 
   getDiscountAmount = async (req, res, next) => {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Success code found",
       metadata: await DiscountService.getDiscountAmount({
         ...req.body,
@@ -41,7 +41,7 @@ class DiscountController {
   };
 
   getAllDiscountCodeWithProducts = async (req, res, next) => {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Success code found",
       metadata: await DiscountService.getAllDiscountCodeWithProduct({
         ...req.query,
@@ -50,7 +50,7 @@ class DiscountController {
   };
 
   deleteDiscount = async (req, res, next) => {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Success",
       metadata: await DiscountService.deleteDiscountCode({
         ...req.body,
@@ -59,7 +59,7 @@ class DiscountController {
   };
 
   cancelDiscount = async (req, res, next) => {
-    new SuccessRespone({
+    new SuccessResponse({
       message: "Success",
       metadata: await DiscountService.cancelDiscount(req.body),
     }).send(res);
