@@ -10,7 +10,7 @@ const apiKeySchema = new Schema(
   {
     key: {
       type: String,
-      require: true,
+      required: true,
       unque: true,
       index: true,
     },
@@ -21,7 +21,7 @@ const apiKeySchema = new Schema(
     },
     permissions: {
       type: [String],
-      require: true,
+      required: true,
       enum: Object.values(PERMISSIONS),
       default: [PERMISSIONS.READ],
     },
