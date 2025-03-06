@@ -10,16 +10,16 @@ const keyTokenSchema = new Schema(
   {
     user: {
       type: Schema.Types.ObjectId,
-      require: true,
+      required: true,
       ref: "Shop",
     },
     privateKey: {
       type: String,
-      require: true,
+      required: true,
     }, 
     publicKey: {
       type: String,
-      require: true,
+      required: true,
     },
     refreshTokensUsed: {
       type: Array,
@@ -27,7 +27,7 @@ const keyTokenSchema = new Schema(
     },
     refreshToken: {
       type: String,
-      require: true
+      required: true
     }
   },
   {
