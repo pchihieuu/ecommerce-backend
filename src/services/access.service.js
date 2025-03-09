@@ -23,116 +23,99 @@ const RoleShop = {
 class AccessService {
   // /* check token used*/
   static handleRefreshTokenV2 = async ({ keyStore, user, refreshToken }) => {
+    // Debug information to find what's missing
+    console.log("handleRefreshTokenV2 params:", {
+      hasKeyStore: !!keyStore,
+      hasUser: !!user,
+      hasRefreshToken: !!refreshToken,
+    });
+
+    // Add validation to ensure all required parameters exist
+    if (!keyStore || !user || !refreshToken) {
+      console.error("Missing required parameters:", {
+        keyStore: !!keyStore,
+        user: !!user,
+        refreshToken: !!refreshToken,
+      });
+      throw new BadRequestResponse("Invalid request parameters");
+    }
+
     const { userId, email } = user;
+
+    console.log("Debug - keyStore refreshToken:", keyStore.refreshToken);
+    console.log("Debug - provided refreshToken:", refreshToken);
+    console.log("Debug - refreshTokensUsed:", keyStore.refreshTokensUsed);
+
+    // Ensure refreshTokensUsed is initialized
+    if (!keyStore.refreshTokensUsed) {
+      keyStore.refreshTokensUsed = [];
+    }
+
+    // Check if token has been used before
     if (keyStore.refreshTokensUsed.includes(refreshToken)) {
       await KeyTokenService.deleteKeyByUserId(userId);
-      throw new BadRequestResponse("Something wrong happened!! Please relogin");
+      throw new ForbiddenResponse("Token has been used. Please login again");
     }
+
+    // Check if provided token matches stored token
     if (keyStore.refreshToken !== refreshToken) {
-      throw new AuthFailureResponse("Shop not registered");
+      console.error("Token mismatch:", {
+        storedToken: keyStore.refreshToken,
+        providedToken: refreshToken,
+      });
+      throw new AuthFailureResponse("Invalid refresh token");
     }
-    // check userId, email
-    const foundShop = await findByEmail({ email });
-    if (!foundShop) {
-      throw new AuthFailureResponse("Shop not registerred");
-    }
-    // neu thoa man hop le
-    // 1. create cap token moi
-    const tokens = await createTokenPair(
-      { userId, email },
-      keyStore.publicKey,
-      keyStore.privateKey
-    );
-    // 2. dua refreshToken vua gui vao danh sach het han
-    await keyStore.updateOne({
-      $set: {
-        refreshToken: tokens.refreshToken,
-      },
-      $addToSet: {
-        refreshTokensUsed: refreshToken, // Match the model field name
-      },
-    });
-    return {
-      user,
-      tokens,
-    };
-  };
 
-  static handleRefreshToken = async (refreshToken) => {
-    // xem refreshToken gui len da het han hay chua
-    const foundToken = await KeyTokenService.findByRefreshTokenUsed(
-      refreshToken
-    );
-
-    if (foundToken) {
-      // decode ra xem may la thang nao?
-      const { userId, email } = await verifyJWT(
-        refreshToken,
-        foundToken.privateKey
-      );
-
-      if (userId && email) {
-        await KeyTokenService.deleteKeyByUserId(userId);
-        throw new ForbiddenResponse(
-          "Something wrong happened!! Please relogin"
-        );
+    try {
+      // check userId, email
+      const foundShop = await findByEmail({ email });
+      if (!foundShop) {
+        throw new AuthFailureResponse("Shop not registered");
       }
-    }
 
-    // neu refreshToken chua het han, kiem tra xem refreshToken co phai do he thong tao hay khong
-    const holderToken = await KeyTokenService.findByRefreshToken(refreshToken);
-    if (!holderToken) {
-      throw new AuthFailureResponse("Shop not registerred");
-    }
-
-    // verify token
-    const { userId, email } = await verifyJWT(
-      refreshToken,
-      holderToken.privateKey
-    );
-
-    // check userId, email
-    const foundShop = await findByEmail({ email });
-    if (!foundShop) {
-      throw new AuthFailureResponse("Shop not registerred");
-    }
-
-    // neu thoa man hop le
-    // 1. create cap token moi
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      await createTokenPair(
-        {
-          userId,
-          email,
-        },
-        holderToken.privateKey,
-        holderToken.publicKey
+      // Create new token pair
+      const tokens = await createTokenPair(
+        { userId, email },
+        keyStore.publicKey,
+        keyStore.privateKey
       );
-    // 2. dua refreshToken vua gui vao danh sach het han
-    await holderToken.updateOne({
-      $set: {
-        refreshToken: newRefreshToken,
-      },
-      $addToSet: {
-        refreshTokensUsed: refreshToken,
-      },
-    });
-    return {
-      user: { userId, email },
-      tokens: {
-        refreshToken: newRefreshToken,
-        accessToken: newAccessToken,
-      },
-    };
+
+      // Update keyStore with new refresh token and add old one to used list
+      await keyStore.updateOne({
+        $set: {
+          refreshToken: tokens.refreshToken,
+        },
+        $addToSet: {
+          refreshTokensUsed: refreshToken,
+        },
+      });
+
+      console.log("Generated new tokens successfully:", {
+        hasAccessToken: !!tokens.accessToken,
+        hasRefreshToken: !!tokens.refreshToken,
+      });
+
+      return {
+        user: { userId, email },
+        tokens,
+      };
+    } catch (error) {
+      console.error("Error in handleRefreshTokenV2:", error);
+      throw error;
+    }
   };
 
+  // Other methods remain the same...
   static logOut = async (keyStore) => {
+    if (!keyStore) {
+      throw new BadRequestResponse("Invalid key store");
+    }
     const delKey = await KeyTokenService.removeTokenById(keyStore._id);
     return delKey;
   };
 
   static signIn = async ({ email, password, refreshToken = null }) => {
-    // 1. check email dbs
+    // 1. check email in database
     const foundShop = await findByEmail({ email });
     if (!foundShop) throw new BadRequestResponse("Shop not registered!");
 
@@ -145,7 +128,6 @@ class AccessService {
     const publicKey = crypto.randomBytes(64).toString("hex");
 
     // 4. generate tokens
-    const { _id: userId } = foundShop;
     const tokens = await createTokenPair(
       {
         userId: foundShop._id,
@@ -155,11 +137,13 @@ class AccessService {
       privateKey
     );
 
+    // 5. Save token to database
     await KeyTokenService.createKeyToken({
       refreshToken: tokens.refreshToken,
       publicKey,
       privateKey,
       userId: foundShop._id,
+      refreshTokensUsed: [], // Initialize empty array for used tokens
     });
 
     return {
@@ -176,7 +160,7 @@ class AccessService {
     // Check if shop already exists
     const holderShop = await shopModel.findOne({ email }).lean();
     if (holderShop) {
-      throw new BadRequestResponse("Shop already registered ");
+      throw new BadRequestResponse("Shop already registered");
     }
 
     // Create new shop with hashed password
@@ -191,17 +175,16 @@ class AccessService {
     if (newShop) {
       const privateKey = crypto.randomBytes(64).toString("hex");
       const publicKey = crypto.randomBytes(64).toString("hex");
-      console.log({ publicKey, privateKey });
 
       const keyStore = await KeyTokenService.createKeyToken({
         userId: newShop._id,
         publicKey,
         privateKey,
+        refreshTokensUsed: [], // Initialize empty array for used tokens
       });
 
       if (!keyStore) {
-        throw new BadRequestResponse("Keystore tis error");
-        // throw new Error("keyStore is error");
+        throw new BadRequestResponse("Error creating keystore");
       }
 
       // create access tokens
@@ -213,13 +196,12 @@ class AccessService {
         publicKey,
         privateKey
       );
-      console.log(`Create tokens success: `, tokens);
 
       return {
         code: 201,
         metadata: {
           shop: getInfoData({
-            fileds: ["id", "name", "email"],
+            fileds: ["_id", "name", "email"],
             object: newShop,
           }),
           tokens,
