@@ -28,7 +28,7 @@ class NotificationService {
       noti_content,
       noti_type: type,
       noti_senderId: convertToObjectId(senderId),
-      noti_receivedId: receivedId,
+      noti_receivedId: convertToObjectId(receivedId),
       noti_options: options,
     });
     return newNoti;
