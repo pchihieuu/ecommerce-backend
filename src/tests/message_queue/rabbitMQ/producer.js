@@ -1,5 +1,5 @@
 const amqp = require("amqplib");
-const message = "Hello, RabbitMQ for NODEJS";
+const message = "New product created successfully";
 
 const runProducer = async () => {
   try {
@@ -11,10 +11,14 @@ const runProducer = async () => {
 
     channel.sendToQueue(queueName, Buffer.from(message));
     console.log(` message Sent ${message}`);
+
+    setTimeout(() => {
+      connection.close();
+      console.log("Connection closed");
+    }, 500);
   } catch (error) {
     console.error(error);
   }
 };
 
 runProducer().catch((err) => console.log(err));
-
