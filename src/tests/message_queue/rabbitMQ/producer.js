@@ -1,5 +1,5 @@
 const amqp = require("amqplib");
-const message = "New product created successfully";
+const message = "New product created";
 
 const runProducer = async () => {
   try {
@@ -10,7 +10,7 @@ const runProducer = async () => {
     await channel.assertQueue(queueName, { durable: true });
 
     channel.sendToQueue(queueName, Buffer.from(message));
-    console.log(` message Sent ${message}`);
+    console.log(` message Sent:: ${message}`);
 
     setTimeout(() => {
       connection.close();
