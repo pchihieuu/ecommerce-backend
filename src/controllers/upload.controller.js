@@ -1,5 +1,6 @@
 "use strict";
 
+const UploadAwsService = require("../services/upload.s3.service");
 const { BadRequestResponse } = require("../core/error.response");
 const { SuccessResponse } = require("../core/success.response");
 const UploadService = require("../services/upload.service");
@@ -38,6 +39,18 @@ class UploadController {
       message: "Upload images from local successfully",
       metadata: await UploadService.uploadImagesFromLocal({
         files,
+      }),
+    }).send(res);
+  }
+  async uploadImageFromLocalS3(req, res, next) {
+    const { file } = req;
+    if (!file) {
+      throw new BadRequestResponse("Error uploading images from local");
+    }
+    new SuccessResponse({
+      message: "Upload images from local to S3 successfully",
+      metadata: await UploadAwsService.uploadImageFromLocalS3({
+        file,
       }),
     }).send(res);
   }
