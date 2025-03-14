@@ -5,6 +5,7 @@ const { apiKey, permission } = require("../auth/checkAuth");
 const { pushToLogDiscord } = require("../middlewares/index.js");
 const router = express.Router();
 router.use(pushToLogDiscord);
+router.use("/v1/api/upload", require("./upload"));
 // check api key
 router.use(apiKey);
 
