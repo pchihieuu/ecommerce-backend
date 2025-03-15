@@ -1,22 +1,16 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: Node.js CI
-
 on:
   push:
     branches: [ "master" ]
-
 jobs:
   build:
-
     runs-on: self-hosted
-
     strategy:
       matrix:
         node-version: [22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
@@ -24,10 +18,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-
     - name: Install dependencies
       run: npm ci
-
     - name: Create .env file
       run: |
         echo "NODE_ENV=${{secrets.NODE_ENV}}" > .env
@@ -57,9 +49,8 @@ jobs:
         echo "AWS_CLOUDFRONT_DOMAIN=${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" >> .env
         echo "AWS_CLOUDFRONT_PUBLIC_KEY_ID=${{ secrets.AWS_CLOUDFRONT_PUBLIC_KEY_ID }}" >> .env
         echo "AWS_CLOUDFRONT_PRIVATE_KEY=${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" >> .env
-
     - name: Debug .env file
-    - run: |
+      run: |
         pwd
         ls -la
         echo "Checking if .env exists:"
