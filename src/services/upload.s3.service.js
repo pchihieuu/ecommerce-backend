@@ -1,49 +1,80 @@
 "use strict";
+
 const { BadRequestResponse } = require("../core/error.response");
-const {
-  s3,
-  PutObjectCommand,
-  GetObjectCommand,
-} = require("../configs/aws-s3.config");
+const { s3, PutObjectCommand } = require("../configs/aws-s3.config");
 const { getSignedUrl } = require("@aws-sdk/cloudfront-signer");
 
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
+
+const {
+  AWS_BUCKET_NAME: bucketName,
+  AWS_CLOUDFRONT_DOMAIN: cloudfrontDomain,
+  AWS_CLOUDFRONT_PUBLIC_KEY_ID: keyPairId,
+  AWS_CLOUDFRONT_PRIVATE_KEY: privateKey,
+} = process.env;
+
+const DEFAULT_URL_EXPIRATION = 60 * 60;
+
 class UploadAwsService {
-  static async uploadImageFromLocalS3({ file }) {
+  static async uploadImageFromLocalS3({
+    file,
+    expiresIn = DEFAULT_URL_EXPIRATION,
+  }) {
     try {
       if (!file) {
         throw new BadRequestResponse("No file provided");
       }
-      const imageName = `${Date.now()}-${file.originalname}`;
-      const commandForPut = new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: imageName,
+
+      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        throw new BadRequestResponse(
+          `Unsupported file type. Allowed types: ${ALLOWED_MIME_TYPES.join(
+            ", "
+          )}`
+        );
+      }
+
+      const uniqueFileName = `${Date.now()}-${file.originalname.replace(
+        /\s+/g,
+        "-"
+      )}`;
+      const uploadCommand = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: uniqueFileName,
         Body: file.buffer,
         ContentType: file.mimetype,
+        ContentDisposition: "inline",
+        CacheControl: "max-age=31536000",
       });
 
-      await s3.send(commandForPut);
-
-      const cloudfrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
-      const privateKey = process.env.AWS_CLOUDFRONT_PRIVATE_KEY;
-
-      // Create signed URL
+      // Upload to S3
+      await s3.send(uploadCommand);
       const signedUrl = getSignedUrl({
-        url: `${cloudfrontDomain}/${imageName}`,
-        dateLessThan: new Date(Date.now() + 1000 * 60 * 60),
-        keyPairId: process.env.AWS_CLOUDFRONT_PUBLIC_KEY_ID,
-        privateKey: privateKey,
+        url: `${cloudfrontDomain}/${uniqueFileName}`,
+        dateLessThan: new Date(Date.now() + expiresIn * 1000),
+        keyPairId,
+        privateKey,
       });
 
       return {
         message: "Image uploaded successfully",
-        filename: imageName,
+        filename: uniqueFileName,
         size: file.size,
         type: file.mimetype,
         url: signedUrl,
+        expiresIn,
       };
     } catch (error) {
-      console.log(error);
-      throw new BadRequestResponse(error.message);
+      console.error("Image upload error:", error);
+
+      if (error instanceof BadRequestResponse) {
+        throw error;
+      }
+      throw new BadRequestResponse(error.message || "Error uploading image");
     }
   }
 }
