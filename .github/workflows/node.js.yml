@@ -24,7 +24,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
+
+    - name: Install dependencies
+      run: npm ci
+
     - name: Create .env file
       run: |
         echo "NODE_ENV=${{secrets.NODE_ENV}}" > .env
@@ -61,5 +64,5 @@ jobs:
         ls -la
         echo "Checking if .env exists:"
         test -f .env && echo ".env file exists"
-        
-    - run: npm start
+    - name: Start application
+      run: npm start
