@@ -25,3 +25,41 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
+    - name: Create .env file
+      run: |
+        echo "NODE_ENV=${{secrets.NODE_ENV}}" > .env
+        echo "DEV_APP_PORT=${{ secrets.DEV_APP_PORT }}" >> .env
+        echo "DEV_DB_HOST=${{ secrets.DEV_DB_HOST }}" >> .env
+        echo "DEV_DB_PORT=${{ secrets.DEV_DB_PORT }}" >> .env
+        echo "DEV_DB_NAME=${{ secrets.DEV_DB_NAME }}" >> .env
+        echo "PRO_APP_PORT=${{ secrets.PRO_APP_PORT }}" >> .env
+        echo "PRO_DB_HOST=${{ secrets.PRO_DB_HOST }}" >> .env
+        echo "PRO_DB_PORT=${{ secrets.PRO_DB_PORT }}" >> .env
+        echo "PRO_DB_NAME=${{ secrets.PRO_DB_NAME }}" >> .env
+        echo "TOKEN_DISCORD=${{ secrets.TOKEN_DISCORD }}" >> .env
+        echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
+        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
+        echo "RABBITMQ_HOST=${{ secrets.RABBITMQ_HOST }}" >> .env
+        echo "RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}" >> .env
+        echo "RABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}" >> .env
+        echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> .env
+        echo "RABBITMQ_VHOST=${{ secrets.RABBITMQ_VHOST }}" >> .env
+        echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" >> .env
+        echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}" >> .env
+        echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}" >> .env
+        echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME}}" >> .env
+        echo "AWS_BUCKET_ACCESS_KEY=${{ secrets.AWS_BUCKET_ACCESS_KEY }}" >> .env
+        echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+        echo "AWS_CLOUDFRONT_DOMAIN=${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" >> .env
+        echo "AWS_CLOUDFRONT_PUBLIC_KEY_ID=${{ secrets.AWS_CLOUDFRONT_PUBLIC_KEY_ID }}" >> .env
+        echo "AWS_CLOUDFRONT_PRIVATE_KEY=${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" >> .env
+
+    - name: Debug .env file
+    - run: |
+        pwd
+        ls -la
+        echo "Checking if .env exists:"
+        test -f .env && echo ".env file exists"
+        
+    - run: npm start
