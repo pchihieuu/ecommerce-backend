@@ -1,5 +1,4 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 name: Node.js CI
 on:
   push:
@@ -7,10 +6,20 @@ on:
 jobs:
   build:
     runs-on: self-hosted
+    services:
+      # Add Redis service container
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       matrix:
         node-version: [22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
@@ -33,8 +42,9 @@ jobs:
         echo "PRO_DB_NAME=${{ secrets.PRO_DB_NAME }}" >> .env
         echo "TOKEN_DISCORD=${{ secrets.TOKEN_DISCORD }}" >> .env
         echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
-        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
+        # Set Redis host to localhost as the Redis service is running on the same machine
+        echo "REDIS_HOST=localhost" >> .env
+        echo "REDIS_PORT=6379" >> .env
         echo "RABBITMQ_HOST=${{ secrets.RABBITMQ_HOST }}" >> .env
         echo "RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}" >> .env
         echo "RABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}" >> .env
@@ -49,11 +59,12 @@ jobs:
         echo "AWS_CLOUDFRONT_DOMAIN=${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" >> .env
         echo "AWS_CLOUDFRONT_PUBLIC_KEY_ID=${{ secrets.AWS_CLOUDFRONT_PUBLIC_KEY_ID }}" >> .env
         echo "AWS_CLOUDFRONT_PRIVATE_KEY=${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" >> .env
-    - name: Debug .env file
+    - name: Install Redis CLI
       run: |
-        pwd
-        ls -la
-        echo "Checking if .env exists:"
-        test -f .env && echo ".env file exists"
+        sudo apt-get update
+        sudo apt-get install -y redis-tools
+    - name: Verify Redis connection
+      run: |
+        redis-cli ping
     - name: Start application
       run: npm start
