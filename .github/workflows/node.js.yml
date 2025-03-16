@@ -187,7 +187,6 @@ jobs:
 
     - name: Debug .env file
       run: |
-      run: |
         pwd
         ls -la
         echo "Checking if .env exists:"
