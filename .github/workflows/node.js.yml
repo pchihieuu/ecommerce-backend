@@ -32,19 +32,26 @@ jobs:
           echo "MongoDB container is already running."
         fi
         
-        # Kiểm tra và sửa lỗi port mapping của RabbitMQ
-        if docker ps | grep rabbitMQ; then
-          echo "Checking RabbitMQ port mapping..."
-          if docker port rabbitMQ | grep "5672->15672"; then
-            echo "Incorrect port mapping detected. Restarting RabbitMQ container with correct mapping..."
-            docker stop rabbitMQ
+        # Kiểm tra container RabbitMQ (bao gồm cả stopped containers)
+        if docker ps -a | grep rabbitMQ; then
+          echo "RabbitMQ container exists. Checking status..."
+          if docker ps | grep rabbitMQ; then
+            echo "RabbitMQ container is running. Checking port mapping..."
+            if docker port rabbitMQ | grep "5672->15672"; then
+              echo "Incorrect port mapping detected. Restarting RabbitMQ container with correct mapping..."
+              docker stop rabbitMQ
+              docker rm rabbitMQ
+              docker run --name rabbitMQ -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+            else
+              echo "RabbitMQ container is running with correct port mapping."
+            fi
+          else
+            echo "RabbitMQ container exists but is not running. Starting with correct port mapping..."
             docker rm rabbitMQ
             docker run --name rabbitMQ -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-          else
-            echo "RabbitMQ container is running with correct port mapping."
           fi
         else
-          echo "RabbitMQ container is not running. Starting container with correct port mapping..."
+          echo "RabbitMQ container does not exist. Creating new container..."
           docker run --name rabbitMQ -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
         fi
         
