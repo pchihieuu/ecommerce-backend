@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const { default: helmet } = require("helmet");
 const compression = require("compression");
 // const { checkOverload } = require("./helpers/check.connect");
-
+const { corsMiddleware, pushToLogDiscord } = require('./middlewares');
 const app = express();
 
 // init middlewares
@@ -16,6 +16,9 @@ app.use(
     extended: true,
   })
 );
+app.use(corsMiddleware);
+app.use(pushToLogDiscord);
+
 
 // test redis
 require("./tests/inventory.test");
@@ -29,6 +32,16 @@ require("./db/mongodb");
 app.use("/", require("./routes"));
 
 // hander error
+
+app.get('/health', (req, res) => {
+  return res.status(200).json({
+    status: 'success',
+    message: 'API is working',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 
 app.use((req, res, next) => {
   const error = new Error("Not Found");
