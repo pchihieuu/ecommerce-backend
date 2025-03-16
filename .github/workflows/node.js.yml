@@ -150,10 +150,10 @@ jobs:
         npm install pm2 -g
         
         # Stop existing instance if running
-        pm2 stop server || true
+        pm2 stop ecommerce-backend || true
         
         # Start new instance
-        pm2 start server.js --name="your-app-name"
+        pm2 start server.js --name="ecommerce-backend"
         
         # Save PM2 configuration to ensure it restarts after server reboot
         pm2 save
