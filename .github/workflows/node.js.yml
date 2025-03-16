@@ -144,8 +144,16 @@ jobs:
         timeout 30s node server.js || echo "Application startup timeout as expected"
         echo "Application verification completed"
 
-    - name: Deploy if needed
+    - name: Deploy with PM2
       run: |
-        echo "Deployment process would go here if needed"
-        # Add your deployment commands here if applicable
-        echo "Workflow completed successfully"
+        # Install PM2 if not already installed
+        npm install pm2 -g
+        
+        # Stop existing instance if running
+        pm2 stop server || true
+        
+        # Start new instance
+        pm2 start server.js --name="your-app-name"
+        
+        # Save PM2 configuration to ensure it restarts after server reboot
+        pm2 save
