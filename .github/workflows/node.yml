@@ -1,0 +1,133 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check and start Docker containers
+      run: |
+        # Kiểm tra và khởi động container MongoDB
+        if ! docker ps | grep mongodb; then
+          echo "MongoDB container is not running. Starting container..."
+          docker start mongodb || docker run --name mongodb -d -p 27017:27017 mongodb/mongodb-community-server:latest
+        else
+          echo "MongoDB container is already running."
+        fi
+        
+        # Kiểm tra và sửa lỗi port mapping của RabbitMQ
+        if docker ps | grep rabbitMQ; then
+          echo "Checking RabbitMQ port mapping..."
+          if docker port rabbitMQ | grep "5672->15672"; then
+            echo "Incorrect port mapping detected. Restarting RabbitMQ container with correct mapping..."
+            docker stop rabbitMQ
+            docker rm rabbitMQ
+            docker run --name rabbitMQ -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+          else
+            echo "RabbitMQ container is running with correct port mapping."
+          fi
+        else
+          echo "RabbitMQ container is not running. Starting container with correct port mapping..."
+          docker run --name rabbitMQ -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+        fi
+        
+        # Hiển thị các container đang chạy
+        echo "Current running containers:"
+        docker ps
+        
+        # Hiển thị port mapping của RabbitMQ
+        echo "RabbitMQ port mapping:"
+        docker port rabbitMQ
+
+    - name: Check if Redis is running
+      run: |
+        # Check if Redis is running
+        if ! pgrep -x "redis-server" > /dev/null; then
+          echo "Redis server is not running. Starting Redis..."
+          sudo systemctl start redis || sudo service redis-server start || redis-server &
+        else
+          echo "Redis server is already running."
+        fi
+        # Test Redis connection
+        redis-cli ping || echo "Failed to connect to Redis. Please make sure Redis is installed and running."
+
+    - name: Create .env file
+      run: |
+        echo "NODE_ENV=${{secrets.NODE_ENV}}" > .env
+        echo "DEV_APP_PORT=${{ secrets.DEV_APP_PORT }}" >> .env
+        
+        # Cập nhật kết nối MongoDB để sử dụng container local
+        echo "DEV_DB_HOST=localhost" >> .env
+        echo "DEV_DB_PORT=27017" >> .env
+        echo "DEV_DB_NAME=${{ secrets.DEV_DB_NAME }}" >> .env
+        echo "PRO_DB_HOST=localhost" >> .env
+        echo "PRO_DB_PORT=27017" >> .env
+        echo "PRO_DB_NAME=${{ secrets.PRO_DB_NAME }}" >> .env
+        
+        echo "TOKEN_DISCORD=${{ secrets.TOKEN_DISCORD }}" >> .env
+        echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
+        
+        # Cập nhật kết nối Redis
+        echo "REDIS_HOST=localhost" >> .env
+        echo "REDIS_PORT=6379" >> .env
+        
+        # Cập nhật kết nối RabbitMQ để sử dụng container local với port đúng
+        echo "RABBITMQ_HOST=localhost" >> .env
+        echo "RABBITMQ_PORT=5672" >> .env
+        echo "RABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}" >> .env
+        echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> .env
+        echo "RABBITMQ_VHOST=${{ secrets.RABBITMQ_VHOST }}" >> .env
+        
+        echo "CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}" >> .env
+        echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}" >> .env
+        echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}" >> .env
+        echo "AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME}}" >> .env
+        echo "AWS_BUCKET_ACCESS_KEY=${{ secrets.AWS_BUCKET_ACCESS_KEY }}" >> .env
+        echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+        echo "AWS_CLOUDFRONT_DOMAIN=${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" >> .env
+        echo "AWS_CLOUDFRONT_PUBLIC_KEY_ID=${{ secrets.AWS_CLOUDFRONT_PUBLIC_KEY_ID }}" >> .env
+        echo "AWS_CLOUDFRONT_PRIVATE_KEY=${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" >> .env
+
+    - name: Debug .env file
+      run: |
+        pwd
+        ls -la
+        echo "Checking if .env exists:"
+        test -f .env && echo ".env file exists"
+
+    - name: Wait for services to start
+      run: |
+        echo "Waiting for services to fully start..."
+        sleep 10
+        
+        # Test MongoDB connection
+        echo "Testing MongoDB connection..."
+        docker exec mongodb mongosh --eval "db.adminCommand('ping')" || echo "Failed to connect to MongoDB"
+        
+        # Test RabbitMQ connection
+        echo "Testing RabbitMQ connection..."
+        if command -v amqp-tools >/dev/null 2>&1; then
+          amqp-ping -h localhost -p 5672 || echo "Failed to connect to RabbitMQ"
+        else
+          echo "AMQP tools not installed, skipping RabbitMQ connection test"
+        fi
+
+    - name: Start application
+      run: npm start
