@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Ecommerce CI/CD
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
 
     - name: Check and start Docker containers
       run: |
-        # Kiểm tra và khởi động container MongoDB
+        # Test and start MongoDB container
         if ! docker ps | grep mongodb; then
           echo "MongoDB container is not running. Starting container..."
           docker start mongodb || docker run --name mongodb -d -p 27017:27017 mongodb/mongodb-community-server:latest
@@ -32,7 +32,7 @@ jobs:
           echo "MongoDB container is already running."
         fi
         
-        # Kiểm tra container RabbitMQ (bao gồm cả stopped containers)
+        # Test RabbitMQ containers (including stopped containers)
         if docker ps -a | grep rabbitMQ; then
           echo "RabbitMQ container exists. Checking status..."
           if docker ps | grep rabbitMQ; then
@@ -55,11 +55,11 @@ jobs:
           docker run --name rabbitMQ -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management
         fi
         
-        # Hiển thị các container đang chạy
+        # Show running containers
         echo "Current running containers:"
         docker ps
         
-        # Hiển thị port mapping của RabbitMQ
+        # Show RabbitMQ port mapping
         echo "RabbitMQ port mapping:"
         docker port rabbitMQ
 
@@ -80,7 +80,7 @@ jobs:
         echo "NODE_ENV=${{secrets.NODE_ENV}}" > .env
         echo "DEV_APP_PORT=${{ secrets.DEV_APP_PORT }}" >> .env
         
-        # Cập nhật kết nối MongoDB để sử dụng container local
+        # Update MongoDB connection to use local container
         echo "DEV_DB_HOST=localhost" >> .env
         echo "DEV_DB_PORT=27017" >> .env
         echo "DEV_DB_NAME=${{ secrets.DEV_DB_NAME }}" >> .env
@@ -91,11 +91,11 @@ jobs:
         echo "TOKEN_DISCORD=${{ secrets.TOKEN_DISCORD }}" >> .env
         echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
         
-        # Cập nhật kết nối Redis
+        # Update Redis connection
         echo "REDIS_HOST=localhost" >> .env
         echo "REDIS_PORT=6379" >> .env
         
-        # Cập nhật kết nối RabbitMQ để sử dụng container local với port đúng
+        # Update RabbitMQ connection to use local container with correct port
         echo "RABBITMQ_HOST=localhost" >> .env
         echo "RABBITMQ_PORT=5672" >> .env
         echo "RABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}" >> .env
