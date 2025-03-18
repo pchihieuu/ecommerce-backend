@@ -18,6 +18,7 @@
     "@aws-sdk/cloudfront-signer": "^3.734.0",
     "@aws-sdk/s3-request-presigner": "^3.758.0",
     "@redis/client": "^1.6.0",
+    "accesscontrol": "^2.2.1",
     "amqplib": "^0.10.5",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.6.0",
