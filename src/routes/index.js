@@ -20,4 +20,6 @@ router.use("/v1/api/checkout", require("./checkout"));
 router.use("/v1/api/inventory", require("./inventory"));
 router.use("/v1/api/comment", require("./comment"));
 router.use("/v1/api/notification", require("./notification"));
+router.use("/v1/api/profile", require("./profile"));
+router.use("/v1/api/rbac", require("./rbac"));
 module.exports = router;
