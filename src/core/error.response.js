@@ -1,8 +1,9 @@
 "use strict";
-
+const myloggerLog = require("../loggers/mylogger.log");
 const StatusCode = {
   FORBIDEN: 403,
   CONFLICT: 400,
+  NOT_FOUND: 404,
 };
 const MessageResponse = {
   FORBIDEN: "Bad Request",
@@ -15,6 +16,15 @@ class ErrorResponse extends Error {
   constructor(message, status) {
     super(message);
     this.status = status;
+
+    myloggerLog.error(`[${this.status}] - ${this.message}`, {
+      context: "/path",
+      requestId: "ID_REQUEST",
+      metadata: {
+        message: this.message,
+        status: this.status,
+      },
+    });
   }
 }
 
