@@ -30,9 +30,12 @@
     "multer": "^1.4.5-lts.1",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
+    "pm2": "^6.0.5",
     "redis": "^4.7.0",
     "slugify": "^1.6.6",
-    "winston": "^3.17.0"
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "compression": "^1.8.0",

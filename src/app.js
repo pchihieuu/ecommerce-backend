@@ -2,7 +2,8 @@ const express = require("express");
 const morgan = require("morgan");
 const { default: helmet } = require("helmet");
 const compression = require("compression");
-// const { checkOverload } = require("./helpers/check.connect");
+const { v4: uuidv4 } = require("uuid");
+const mylogger = require("./loggers/mylogger.log");
 const { corsMiddleware, pushToLogDiscord } = require("./middlewares");
 const app = express();
 
@@ -16,6 +17,18 @@ app.use(
     extended: true,
   })
 );
+
+// init logger - info of request
+app.use((req, res, next) => {
+  const requestId = req.headers["x-request-id"] || uuidv4();
+  req.requestId = requestId;
+  mylogger.log(`Input params :: ${req.method}`, [
+    req.path,
+    { requestId: req.requestId },
+    req.method === "POST" ? req.body : req.query,
+  ]);
+  next();
+});
 app.use(corsMiddleware);
 app.use(pushToLogDiscord);
 
@@ -31,7 +44,6 @@ require("./db/mongodb");
 app.use("/", require("./routes"));
 
 // hander error
-
 app.get("/health", (req, res) => {
   return res.status(200).json({
     status: "success",
@@ -49,11 +61,25 @@ app.use((req, res, next) => {
 
 app.use((err, req, res, next) => {
   const statusCode = err.status || 500;
+  const resMessage = `${statusCode} - ${Date.now()} - Response - ${JSON.stringify(
+    err
+  )}`;
+  try {
+    mylogger.error(`[${statusCode}] - ${err.message}`, [
+      req.path || "unknown path",
+      { requestId: req.requestId || uuidv4() },
+      { message: resMessage },
+    ]);
+  } catch (logError) {
+    console.error("Logger error:", logError);
+  }
+
   return res.status(statusCode).json({
     status: "error",
     code: statusCode,
-    stack: err.stack,
+    stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
     message: err.message || "Internal Server Error",
   });
 });
+
 module.exports = app;
