@@ -1,6 +1,6 @@
 "use strict";
 
-const { model, Schema, default: mongoose } = require("mongoose");
+const { Schema, default: mongoose } = require("mongoose");
 
 const DOCUMENT_NAME = "User";
 const COLLECTION_NAME = "Users";
@@ -50,7 +50,7 @@ const userSchema = new Schema(
     },
     user_phone: {
       type: String,
-      required: true,
+      default: "",
     },
     user_salf: {
       type: String,

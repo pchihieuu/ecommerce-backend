@@ -3,8 +3,8 @@
 const _ = require("lodash");
 const { Types } = require("mongoose");
 
-const getInfoData = ({ fileds = [], object = {} }) => {
-  return _.pick(object, fileds);
+const getInfoData = ({ fields = [], object = {} }) => {
+  return _.pick(object, fields);
 };
 // ['a', 'b'] => {a: 1, b: 1}
 const getSelectData = (select = []) => {
