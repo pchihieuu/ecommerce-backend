@@ -38,8 +38,8 @@ const productTest = require("./tests/product.test");
 productTest.purchaseProduct("productId:001", 10);
 
 // intit db
-require("./db/mongodb");
-
+require("./db/init.mongodb");
+require("./db/init.redis");
 // init routes
 app.use("/", require("./routes"));
 
