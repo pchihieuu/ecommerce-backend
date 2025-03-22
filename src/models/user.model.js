@@ -30,6 +30,10 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    user_temporary_password: {
+      type: String,
+      expires: 2 * 60 * 60,
+    },
     user_role: {
       type: Schema.Types.ObjectId,
       ref: "Role",
