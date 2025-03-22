@@ -1,5 +1,6 @@
 "use strict";
 
+const { BadRequestResponse } = require("../core/error.response");
 const otpModel = require("../models/otp.model");
 const crypto = require("crypto");
 class OtpService {
@@ -15,6 +16,21 @@ class OtpService {
       otp_token: token,
     });
     return newOtp;
+  }
+
+  static async checkOtp({ email = null, token = null }) {
+    const otp = await otpModel
+      .findOne({ otp_email: email, otp_token: token })
+      .lean()
+      .exec();
+
+    if (!otp) {
+      throw new BadRequestResponse("Invalid OTP token");
+    }
+    // delete because we only use one time - and otp is valid
+
+    await otpModel.deleteOne({ otp_email: email, otp_token: token });
+    return otp;
   }
 }
 

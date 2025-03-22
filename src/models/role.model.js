@@ -1,6 +1,6 @@
 "use strict";
 
-const { model, Schema, default: mongoose } = require("mongoose");
+const { Schema, default: mongoose } = require("mongoose");
 
 const DOCUMENT_NAME = "Role";
 const COLLECTION_NAME = "Roles";

@@ -19,7 +19,7 @@ class UserController {
   }
 
   async checkRegisterEmailToken(req, res, next) {
-    const { email, token } = req.params;
+    const { email, token } = req.body;
 
     if (!email || !token) {
       throw new BadRequestResponse("Invalid email or token");
