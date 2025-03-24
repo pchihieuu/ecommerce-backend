@@ -6,6 +6,7 @@ const { pushToLogDiscord } = require("../middlewares/index.js");
 const router = express.Router();
 router.use(pushToLogDiscord);
 router.use("/v1/api/upload", require("./upload"));
+router.use("/v1/api/users", require("./user"));
 // check api key
 router.use(apiKey);
 
@@ -23,5 +24,5 @@ router.use("/v1/api/notification", require("./notification"));
 router.use("/v1/api/profile", require("./profile"));
 router.use("/v1/api/rbac", require("./rbac"));
 router.use("/v1/api/template", require("./template"));
-router.use("/v1/api/users", require("./user"));
+
 module.exports = router;
