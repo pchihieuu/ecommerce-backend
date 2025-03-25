@@ -1,6 +1,5 @@
 "use strict";
 
-const otpModel = require("../models/otp.model");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const {
@@ -19,54 +18,59 @@ class UserService {
   static async findUserByEmail({ email = null }) {
     return await User.findOne({ user_email: email }).lean().exec();
   }
-  static async newUser({ email = null, capcha = null }) {
-    const user = await User.findOne({ email }).lean().exec();
-    if (user) {
-      throw new BadRequestResponse("Email already exists");
+
+  static async newUser({ email = null, password = null }) {
+    if (!email || !password) {
+      throw new BadRequestResponse("Email and password are required");
     }
 
-    // check if captcha is valid => send to email
-    return {
-      message: "Send otp to email successfully",
-    };
-  }
-  static async checkRegisterEmailToken({ email = null, token = null }) {
-    // Check if OTP is valid
-    const otp = await OtpService.checkOtp({ email, token });
-
-    if (!otp) {
-      throw new BadRequestResponse("Invalid otp or email");
-    }
-    // Check if user already exists
-    const existingUser = await User.findOne({ user_email: email })
-      .lean()
-      .exec();
+    const existingUser = await UserService.findUserByEmail({ email });
     if (existingUser) {
       throw new BadRequestResponse("Email already exists");
     }
 
-    // Generate password hash
-    const hashPassword = await bcrypt.hash(email, 10);
-
-    // Find user role
     const role = await Role.findOne({ role_name: "user" });
     if (!role) {
       throw new NotFoundResponse("Role not found");
     }
 
-    // Create new user
+    // const otp = await OtpService.newOtp({ email, password });
+    const EmailService = require("./email.service");
+    const otp = await EmailService.sendEmail({ email, password });
+
+    return {
+      message: "Verification OTP sent to email",
+      otpId: otp._id,
+    };
+  }
+
+  static async checkRegisterEmailToken({ email = null, token = null }) {
+    // Check if OTP is valid
+    const otp = await OtpService.checkOtp({ email, token });
+
+    const existingUser = await UserService.findUserByEmail({ email });
+
+    if (existingUser) {
+      throw new BadRequestResponse("Email already exists");
+    }
+
+    const role = await Role.findOne({ role_name: "user" });
+    if (!role) {
+      throw new NotFoundResponse("Role not found");
+    }
+
     const user_slug = email.split("@")[0].toLowerCase();
     const newUser = await createUser({
       user_id: Date.now(),
       user_name: email.split("@")[0],
       user_slug: user_slug,
       user_email: email,
-      user_password: hashPassword,
+      user_password: otp.user_password,
       user_role: role._id,
+      user_status: "active",
     });
 
     if (newUser) {
-      // Generate tokens
       const privateKey = crypto.randomBytes(64).toString("hex");
       const publicKey = crypto.randomBytes(64).toString("hex");
       const tokens = await createTokenPair(
@@ -92,7 +96,7 @@ class UserService {
 
       return {
         user: getInfoData({
-          fields: ["_id", "user_name", "user_email"],
+          fields: ["_id", "user_name", "user_email", "user_status"],
           object: newUser,
         }),
         tokens,
@@ -102,6 +106,60 @@ class UserService {
     return {
       message: "Verify email successfully",
     };
+  }
+
+  static async login({ email = null, password = null }) {
+    const user = await User.findOne({ user_email: email });
+    if (!user) {
+      throw new NotFoundResponse("User not found");
+    }
+
+    if (user.user_status !== "active") {
+      throw new BadRequestResponse("User account is not active");
+    }
+
+    const isMatch = await bcrypt.compare(password, user.user_password);
+    if (!isMatch) {
+      throw new BadRequestResponse("Invalid credentials");
+    }
+
+    const privateKey = crypto.randomBytes(64).toString("hex");
+    const publicKey = crypto.randomBytes(64).toString("hex");
+    const tokens = await createTokenPair(
+      {
+        userId: user._id,
+        email,
+      },
+      publicKey,
+      privateKey
+    );
+
+    const keyStore = await KeyTokenService.createKeyToken({
+      userId: user._id,
+      publicKey,
+      privateKey,
+      refreshToken: tokens.refreshToken,
+    });
+
+    if (!keyStore) {
+      throw new BadRequestResponse("Error: Public key string error");
+    }
+
+    return {
+      user: getInfoData({
+        fields: ["_id", "user_name", "user_email", "user_status"],
+        object: user,
+      }),
+      tokens,
+    };
+  }
+
+  static async logout(keyStore) {
+    if (!keyStore) {
+      throw new BadRequestResponse("Invalid key store");
+    }
+    const delKey = await KeyTokenService.removeTokenById(keyStore._id);
+    return delKey;
   }
 }
 
