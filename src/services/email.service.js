@@ -8,6 +8,8 @@ const OtpService = require("./otp.service");
 const TemplateService = require("./template.service");
 const { replacePlaceholder } = require("../utils/template.html");
 const transporter = require("../configs/nodemailer.config");
+const crypto = require("crypto");
+
 class EmailService {
   static sendEmailUsingThridParty({
     toEmail = null,
@@ -40,16 +42,18 @@ class EmailService {
     });
   }
 
-  static async sendEmail({ email = null }) {
+  static async sendEmail({ email = null, password = null }) {
     try {
       if (!email) {
         throw new BadRequestResponse("Email is required");
       }
 
-      // get token from otp
-      const otp = await OtpService.newOtp({ email });
+      if (!password) {
+        password = crypto.randomBytes(10).toString("hex");
+      }
 
-      // get template
+      const otp = await OtpService.newOtp({ email, password });
+
       const template = await TemplateService.getTemplate({
         template_name: "HTML_EMAIL_TOKEN",
       });
@@ -57,7 +61,6 @@ class EmailService {
       if (!template) {
         throw new NotFoundResponse("Template not found");
       }
-      // replace placeholder
       const html = replacePlaceholder(template.template_html, {
         verify_link: `http://localhost:3000/api/v1/user/verify-email?email=${email}&token=${otp.otp_token}`,
       });

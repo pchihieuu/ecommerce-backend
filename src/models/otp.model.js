@@ -19,11 +19,15 @@ const otpSchema = new Schema(
       enum: ["pending", "active", "blocked"],
       default: "pending",
     },
+    user_password: {
+      type: String,
+      required: true,
+    },
     expiredAt: {
       type: Date,
       required: true,
       default: Date.now(),
-      expires: 60,
+      expires: 60 * 15, // 15 minutes expiration
     },
   },
   {
