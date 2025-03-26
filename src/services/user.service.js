@@ -13,6 +13,7 @@ const createUser = require("../models/repository/user.repo");
 const { createTokenPair } = require("../auth/authUtils");
 const KeyTokenService = require("./keyToken.service");
 const { getInfoData } = require("../utils");
+const { ValidationUtils } = require("../utils/validation");
 
 class UserService {
   static async findUserByEmail({ email = null }) {
@@ -20,6 +21,7 @@ class UserService {
   }
 
   static async newUser({ email = null, password = null }) {
+    ValidationUtils.validateSignUpData({ email, password });
     if (!email || !password) {
       throw new BadRequestResponse("Email and password are required");
     }
