@@ -1,49 +1,35 @@
-// "use strict";
-
-// const Logger = require("../loggers/discord.log");
-
-// const pushToLogDiscord = async (req, res, next) => {
-//   try {
-//     console.log(req.get("host"));
-//     Logger.sendToFormatCode({
-//       title: `Method: ${req.method}`,
-//       code: req.method === "GET" ? req.query | req.params : req.body,
-//       message: `${req.get("host")} ${req.originalUrl}`,
-//     });
-//     return next();
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-// module.exports = {
-//   pushToLogDiscord,
-// };
-
 "use strict";
-
 const Logger = require("../loggers/discord.log");
 
 /**
- * Middleware gửi log đến Discord
+ * Middleware to send log to Discord
  */
 const pushToLogDiscord = async (req, res, next) => {
   try {
-    if (req.originalUrl.includes("/health") || req.originalUrl.includes(".")) {
+    if (
+      req.originalUrl.includes("/health") ||
+      req.originalUrl.includes(".") ||
+      req.method === "OPTIONS"
+    ) {
       return next();
     }
 
-    console.log(`Request from: ${req.get("host")}`);
-    const logData = {
-      title: `Method: ${req.method}`,
-      code:
-        req.method === "GET"
-          ? { ...req.query, ...req.params }
-          : sanitizeRequestBody(req.body),
-      message: `${req.get("host")} ${req.originalUrl}`,
-    };
+    if (!req.discordLogSent) {
+      console.log(`Request from: ${req.get("host")}`);
+      const logData = {
+        title: `Method: ${req.method}`,
+        code:
+          req.method === "GET"
+            ? { ...req.query, ...req.params }
+            : sanitizeRequestBody(req.body),
+        message: `${req.get("host")} ${req.originalUrl}`,
+      };
 
-    Logger.sendToFormatCode(logData);
+      // Mark the request as logged
+      req.discordLogSent = true;
+
+      Logger.sendToFormatCode(logData);
+    }
 
     return next();
   } catch (error) {
@@ -53,7 +39,7 @@ const pushToLogDiscord = async (req, res, next) => {
 };
 
 /**
- * Middleware xử lý CORS
+ * Middleware to handle CORS
  */
 const corsMiddleware = (req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -67,6 +53,7 @@ const corsMiddleware = (req, res, next) => {
   );
   res.header("Access-Control-Max-Age", "86400");
   res.header("Access-Control-Allow-Credentials", "true");
+
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
@@ -75,7 +62,7 @@ const corsMiddleware = (req, res, next) => {
 };
 
 /**
- * Loại bỏ thông tin nhạy cảm từ request body
+ * Sanitize sensitive information from request body
  */
 const sanitizeRequestBody = (body) => {
   if (!body) return {};

@@ -7,11 +7,16 @@ const { CHANNEL_ID, TOKEN_DISCORD } = process.env;
 
 class LoggerService {
   constructor() {
+    this.enabled = true;
+
     if (!CHANNEL_ID || !TOKEN_DISCORD) {
       console.error(
         "Discord logger disabled: Missing TOKEN_DISCORD or CHANNEL_ID"
       );
+      this.enabled = false;
+      return;
     }
+
     try {
       this.client = new Client({
         intents: [
@@ -23,16 +28,26 @@ class LoggerService {
       });
 
       this.channelId = CHANNEL_ID;
+
       this.client.on("ready", () => {
         console.log(`Discord logger logged in as ${this.client.user.tag}`);
+        this.enabled = true;
       });
+
       this.client.on("error", (error) => {
         console.error("Discord client error:", error.message);
-      });
-      this.client.login(TOKEN_DISCORD).catch((err) => {
-        console.error("Failed to login to Discord:", err.message);
         this.enabled = false;
       });
+
+      this.client
+        .login(TOKEN_DISCORD)
+        .then(() => {
+          console.log("Discord client successfully logged in");
+        })
+        .catch((err) => {
+          console.error("Failed to login to Discord:", err.message);
+          this.enabled = false;
+        });
     } catch (error) {
       console.error("Error initializing Discord logger:", error.message);
       this.enabled = false;
@@ -100,6 +115,7 @@ class LoggerService {
 
   pushToDiscord(req) {
     if (!this.isReady()) {
+      console.warn("Discord logger not ready. Request not logged.");
       return;
     }
 
