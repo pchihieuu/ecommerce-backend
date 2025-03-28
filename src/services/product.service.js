@@ -17,14 +17,10 @@ const {
   electronic,
   furniture,
 } = require("../models/product.model");
-const {
-  removeUndefinedObject,
-  updateNestedObject,
-  convertToObjectId,
-} = require("../utils");
+const { removeUndefinedObject, updateNestedObject } = require("../utils");
 const { insertInventory } = require("../models/repository/inventory.repo");
 const { pushNotiToSystem } = require("./notification.service");
-
+const cloudinary = require("../configs/cloudinary.config");
 const TYPES = {
   Electronics: "Electronics",
   Clothing: "Clothing",
@@ -34,13 +30,51 @@ const TYPES = {
 class ProductFactory {
   static productRegistry = {}; //key-class
 
+  static async uploadProductThumb(file) {
+    return new Promise((resolve, reject) => {
+      const base64Image = file.buffer.toString("base64");
+
+      cloudinary.uploader.upload(
+        `data:${file.mimetype};base64,${base64Image}`,
+        {
+          folder: "products",
+        },
+        (error, result) => {
+          if (error) {
+            return reject(
+              new Error(`Cloudinary upload error: ${error.message}`)
+            );
+          }
+          resolve(result);
+        }
+      );
+    });
+  }
+
   static registerProductType(type, classRef) {
     ProductFactory.productRegistry[type] = classRef;
   }
-  static async createProduct(type, payload) {
+
+  static async createProduct(type, payload, productThumb) {
     const productType = ProductFactory.productRegistry[type];
     if (!productType)
       throw new BadRequestResponse(`Invalid Product Type::${type}`);
+
+    // If productThumb is provided, upload to Cloudinary
+    let thumbUrl = null;
+    if (productThumb) {
+      try {
+        const uploadResult = await this.uploadProductThumb(productThumb);
+        thumbUrl = uploadResult.secure_url;
+      } catch (error) {
+        throw new BadRequestResponse(`Image upload failed: ${error.message}`);
+      }
+    }
+
+    // Add the thumb URL to the payload if available
+    if (thumbUrl) {
+      payload.product_thumb = thumbUrl;
+    }
 
     return new productType(payload).createProduct();
   }
