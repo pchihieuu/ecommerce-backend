@@ -164,7 +164,7 @@ jobs:
       run: |
         # Start new instance with PM2
         echo "Starting application with PM2..."
-        pm2 start server.js --name="ecommerce-backend" --time
+        pm2 start src/server.js --name="ecommerce-backend" --time
         
         # Save PM2 configuration
         pm2 save
