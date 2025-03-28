@@ -13,7 +13,7 @@ const productSchema = new Schema(
       required: true,
     },
     product_thumb: {
-      type: String,
+      type: [String],
       required: true,
     },
     product_description: {

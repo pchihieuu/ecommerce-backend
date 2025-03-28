@@ -1,16 +1,21 @@
 "use strict";
-
 const { SuccessResponse } = require("../core/success.response");
 const ProductService = require("../services/product.service");
 
 class ProductController {
   createProduct = async (req, res, next) => {
+    const productData = JSON.parse(req.body.data);
+
     new SuccessResponse({
       message: "Create new product success",
-      metadata: await ProductService.createProduct(req.body.product_type, {
-        ...req.body,
-        product_shop: req.user.userId,
-      }),
+      metadata: await ProductService.createProduct(
+        productData.product_type,
+        {
+          ...productData,
+          product_shop: req.user.userId,
+        },
+        req.file
+      ),
     }).send(res);
   };
 
