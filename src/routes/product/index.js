@@ -12,9 +12,17 @@ router.get(
 );
 router.get("/all", asyncHandler(productController.getAllProducts));
 router.get("/detail/:id", asyncHandler(productController.getDetailProduct));
+router.get("/sku", asyncHandler(productController.getDetailSku));
+router.get(
+  "/sku/listBySpuId",
+  asyncHandler(productController.getListSkuBySpuId)
+);
 
 // authentication
 router.use(authenticationV2);
+
+router.get("/spu", asyncHandler(productController.getDetailSpu));
+router.post("/spu/create", asyncHandler(productController.createNewSpu));
 router.post(
   "/create",
   uploadToMemory.single("product_thumb"),

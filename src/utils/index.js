@@ -25,6 +25,10 @@ const removeUndefinedObject = (object) => {
   return newObj;
 };
 
+const randomSpuId = () => {
+  return Math.floor(100000 * Math.random() * 900000);
+};
+
 const updateNestedObject = (object) => {
   if (object === null || typeof object !== "object") {
     return object;
@@ -61,4 +65,5 @@ module.exports = {
   removeUndefinedObject,
   updateNestedObject,
   convertToObjectId,
+  randomSpuId,
 };
