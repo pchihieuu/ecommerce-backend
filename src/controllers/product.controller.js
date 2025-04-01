@@ -1,8 +1,63 @@
 "use strict";
+const SPUService = require("../services/spu.service");
 const { SuccessResponse } = require("../core/success.response");
 const ProductService = require("../services/product.service");
+const SKUService = require("../services/sku.service");
+const { BadRequestResponse } = require("../core/error.response");
 
 class ProductController {
+  getDetailSku = async (req, res, next) => {
+    try {
+      const { sku_id, spu_id } = req.query;
+      new SuccessResponse({
+        message: "Get detail sku success",
+        metadata: await SKUService.getDetailSku({ sku_id, spu_id }),
+      }).send(res);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getListSkuBySpuId = async (req, res, next) => {
+    const { spu_id } = req.query;
+    if (!spu_id) {
+      throw new BadRequestResponse("Missing query params");
+    }
+    new SuccessResponse({
+      message: "Get list sku by spu_id successfully",
+      metadata: await SKUService.getListSkuBySpuId({ spu_id }),
+    }).send(res);
+  };
+
+  getDetailSpu = async (req, res, next) => {
+    try {
+      const { spu_id } = req.query;
+      if (!spu_id) {
+        throw new BadRequestResponse("Missing query params");
+      }
+      new SuccessResponse({
+        message: "Get spu detail successfully",
+        metadata: await SPUService.getDetailSpu({ spu_id }),
+      }).send(res);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  createNewSpu = async (req, res, next) => {
+    try {
+      new SuccessResponse({
+        message: "Create a new spu successfully",
+        metadata: await SPUService.createNewSpu({
+          ...req.body,
+          spu_shop: req.user.userId,
+        }),
+      }).send(res);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   createProduct = async (req, res, next) => {
     const productData = JSON.parse(req.body.data);
 
