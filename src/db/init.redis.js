@@ -1,24 +1,25 @@
 "use strict";
 
-const { createClient } = require("redis");
+const Redis = require("ioredis");
 
 class RedisInitializer {
   static instance = null;
   static client = null;
 
-  // Singleton pattern for Redis client
   static async getInstance() {
     if (!this.instance) {
       try {
-        // Create Redis client with comprehensive configuration
-        this.client = createClient({
-          // Configuration options
-          socket: {
-            host: process.env.REDIS_HOST || "localhost",
-            port: process.env.REDIS_PORT || 6379,
+        this.client = new Redis({
+          host: process.env.REDIS_HOST || "localhost",
+          port: process.env.REDIS_PORT || 6379,
+
+          // Reconnection strategy
+          retryStrategy(times) {
+            const delay = Math.min(times * 50, 2000);
+            console.log(`Redis client attempting to reconnect in ${delay}ms`);
+            return delay;
           },
-          // Optional authentication if needed
-          // password: process.env.REDIS_PASSWORD,
+          maxRetriesPerRequest: null,
         });
 
         // Error handling for client
@@ -31,13 +32,10 @@ class RedisInitializer {
           console.log("Redis client connected successfully");
         });
 
-        // Implement reconnection strategy
+        // Implement reconnection event
         this.client.on("reconnecting", () => {
           console.log("Redis client attempting to reconnect");
         });
-
-        // Connect to Redis
-        await this.client.connect();
 
         // Create instance
         this.instance = this.client;
@@ -48,7 +46,6 @@ class RedisInitializer {
     }
     return this.instance;
   }
-
   // Graceful shutdown method
   static async shutdown() {
     if (this.client) {
@@ -64,7 +61,23 @@ class RedisInitializer {
   }
 }
 
+// Add utility function to get connected instance
+const getIORedis = {
+  get instanceConnect() {
+    if (!RedisInitializer.instance) {
+      console.warn(
+        "Redis connection has not been initialized yet. Initializing now..."
+      );
+      RedisInitializer.getInstance().catch((err) => {
+        console.error("Failed to initialize Redis connection:", err);
+      });
+    }
+    return RedisInitializer.instance;
+  },
+};
+
 module.exports = {
   getInstance: RedisInitializer.getInstance.bind(RedisInitializer),
   shutdown: RedisInitializer.shutdown.bind(RedisInitializer),
+  getIORedis,
 };

@@ -1,25 +1,24 @@
 "use strict";
 
-const { createClient } = require("redis");
+const { getInstance } = require("../db/init.redis");
 
 class RedisService {
   // Acquire lock with improved error handling
   static async acquireLock({ productId, quantity, cartId }) {
-    const client = await this.getInstance();
+    const client = await getInstance();
     const key = `lockv2025_${productId}`;
     const retryTimes = 10;
     const expireTime = 3000; // 3 seconds
 
     for (let i = 0; i < retryTimes; i++) {
       try {
-        // Atomically set lock with expiration
+        // Atomically set lock with expiration using ioredis syntax
         const result = await client.set(
           key,
           JSON.stringify({ quantity, cartId }),
-          {
-            NX: true, // Only set if key does not exist
-            PX: expireTime, // Expire in milliseconds
-          }
+          'PX',
+          expireTime,
+          'NX'
         );
 
         if (result === "OK") {
@@ -40,7 +39,7 @@ class RedisService {
     if (!keyClock) return;
 
     try {
-      const client = await this.getInstance();
+      const client = await getInstance();
       await client.del(keyClock);
     } catch (error) {
       console.error("Failed to release lock:", error);
@@ -49,17 +48,29 @@ class RedisService {
 
   // Additional utility methods
   static async set(key, value, options = {}) {
-    const client = await this.getInstance();
-    return client.set(key, value, options);
+    const client = await getInstance();
+    
+    // Handle options for ioredis (syntax differs from node-redis)
+    if (options.EX) {
+      return client.set(key, value, 'EX', options.EX);
+    } else if (options.PX) {
+      return client.set(key, value, 'PX', options.PX);
+    } else if (options.NX) {
+      return client.set(key, value, 'NX');
+    } else if (options.XX) {
+      return client.set(key, value, 'XX');
+    }
+    
+    return client.set(key, value);
   }
 
   static async get(key) {
-    const client = await this.getInstance();
+    const client = await getInstance();
     return client.get(key);
   }
 
   static async del(key) {
-    const client = await this.getInstance();
+    const client = await getInstance();
     return client.del(key);
   }
 }
