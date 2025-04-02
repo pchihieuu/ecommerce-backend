@@ -6,13 +6,14 @@ const { asyncHandler } = require("../../helpers/asyncHandler");
 const { authenticationV2 } = require("../../auth/authUtils");
 const productController = require("../../controllers/product.controller");
 const { uploadToMemory } = require("../../configs/multer.config");
+const { readCache } = require("../../middlewares/cache.middleware");
 router.get(
   "/search/:keySearch",
   asyncHandler(productController.searchProductsByUser)
 );
 router.get("/all", asyncHandler(productController.getAllProducts));
 router.get("/detail/:id", asyncHandler(productController.getDetailProduct));
-router.get("/sku", asyncHandler(productController.getDetailSku));
+router.get("/sku", readCache,asyncHandler(productController.getDetailSku));
 router.get(
   "/sku/listBySpuId",
   asyncHandler(productController.getListSkuBySpuId)
