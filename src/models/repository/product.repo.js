@@ -1,11 +1,6 @@
 "use strict";
 
-const {
-  product,
-  electronic,
-  clothing,
-  furniture,
-} = require("../product.model");
+const { product } = require("../product.model");
 const { Types, default: mongoose } = require("mongoose");
 const {
   getSelectData,
@@ -116,23 +111,6 @@ const getProductById = async ({ productId }) => {
     })
     .lean();
 };
-
-// const checkProductByServer = async (products) => {
-//   return await Promise.all(
-//     products.map(async (product) => {
-//       const foundProduct = await getProductById({
-//         productId: product.productId,
-//       });
-//       if (foundProduct) {
-//         return {
-//           price: foundProduct.product_price,
-//           quantity: foundProduct.product_quantity,
-//           productId: product.productId,
-//         };
-//       }
-//     })
-//   );
-// };
 
 const checkProductByServer = async (products) => {
   return await Promise.all(

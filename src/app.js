@@ -43,16 +43,6 @@ require("./db/init.redis");
 // init routes
 app.use("/", require("./routes"));
 
-// hander error
-app.get("/health", (req, res) => {
-  return res.status(200).json({
-    status: "success",
-    message: "API is working",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development",
-  });
-});
-
 app.use((req, res, next) => {
   const error = new Error("Not Found");
   error.status = 404;

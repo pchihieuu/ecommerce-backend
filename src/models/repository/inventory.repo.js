@@ -1,3 +1,5 @@
+"use strict";
+
 const { convertToObjectId } = require("../../utils");
 const inventoryModel = require("../inventory.model");
 
