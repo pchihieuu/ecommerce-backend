@@ -4,10 +4,6 @@ const UploadAwsService = require("../services/upload.s3.service");
 const { BadRequestResponse } = require("../core/error.response");
 const { SuccessResponse } = require("../core/success.response");
 const UploadService = require("../services/upload.service");
-const {
-  uploadImageToUrl,
-  updloadImageFromLocal,
-} = require("../services/upload.service");
 
 class UploadController {
   async uploadImageFromUrl(req, res, next) {

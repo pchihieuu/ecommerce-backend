@@ -1,4 +1,5 @@
 "use strict";
+
 const express = require("express");
 const { profiles, profile } = require("../../controllers/profile.controller");
 const { grantAccess } = require("../../middlewares/rbac.middleware");
