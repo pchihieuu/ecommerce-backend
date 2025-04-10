@@ -5,6 +5,12 @@ A comprehensive monolithic e-commerce backend built with Node.js and MongoDB.
 ## Architecture Overview
 
 This project implements a modular monolithic architecture for an e-commerce platform, with distinct modules for authentication, products, inventory, cart, orders, and more - all within a single application. The system uses Docker for containerization and is hosted on Amazon EC2.
+![ecommerce drawio (7)](https://github.com/user-attachments/assets/7518e394-fb50-4ba8-a13c-091e51f27ebe)
+#### CI / CD Diagram:
+![CICD drawio (2)](https://github.com/user-attachments/assets/41751106-4f5c-4903-8fb9-b7ec06ce6b24)
+
+#### Upload diagram:
+![aws-upload drawio](https://github.com/user-attachments/assets/ff653a59-a730-473d-bb82-ab366bdb9dd1)
 
 ## Tech Stack
 
