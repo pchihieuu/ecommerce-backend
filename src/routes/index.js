@@ -24,5 +24,5 @@ router.use("/v1/api/notification", require("./notification"));
 router.use("/v1/api/profile", require("./profile"));
 router.use("/v1/api/rbac", require("./rbac"));
 router.use("/v1/api/template", require("./template"));
-
+router.use("/v1/api/ratings", require("./rating"));
 module.exports = router;
