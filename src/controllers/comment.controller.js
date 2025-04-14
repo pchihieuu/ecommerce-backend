@@ -6,7 +6,7 @@ const CommentService = require("../services/comment.service");
 class CommentController {
   async createComment(req, res, next) {
     // Add userId from authenticated user
-    const { productId, content, parentCommentId } = req.body;
+    const { productId, content, parentCommentId, rating } = req.body;
 
     new SuccessResponse({
       message: "Create comment successful!",
@@ -15,6 +15,7 @@ class CommentController {
         userId: req.user.userId,
         content,
         parentCommentId,
+        rating: rating ? Number(rating) : null,
       }),
     }).send(res);
   }
@@ -27,7 +28,7 @@ class CommentController {
   }
 
   async updateComment(req, res, next) {
-    const { commentId, content } = req.body;
+    const { commentId, content, rating } = req.body;
 
     new SuccessResponse({
       message: "Update comment successful!",
@@ -35,6 +36,29 @@ class CommentController {
         commentId,
         userId: req.user.userId,
         content,
+        rating: rating ? Number(rating) : undefined,
+      }),
+    }).send(res);
+  }
+
+  async getProductRatingSummary(req, res, next) {
+    const { productId } = req.query;
+
+    new SuccessResponse({
+      message: "Get rating summary for product successfully",
+      metadata: await CommentService.getProductRatingSummary(productId),
+    }).send(res);
+  }
+
+  async getCommentsByRating(req, res, next) {
+    const { productId, rating, limit, offset } = req.query;
+    new SuccessResponse({
+      message: "Get comment by rating successfully",
+      metadata: await CommentService.getCommentsByRating({
+        productId,
+        rating: Number(rating),
+        limit: limit ? Number(limit) : 50,
+        offset: offset ? Number(offset) : 0,
       }),
     }).send(res);
   }

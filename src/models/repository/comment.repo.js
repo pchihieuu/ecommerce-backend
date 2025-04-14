@@ -22,58 +22,58 @@ class CommentRepository {
     });
   }
 
-  static async getCommentsByParentId({
-    productId,
-    parentId = null,
-    limit = 50,
-    offset = 0,
-  }) {
-    if (parentId) {
-      const parent = await this.findById(parentId);
-      if (!parent) throw new NotFoundResponse("Parent comment not found");
+  // static async getCommentsByParentId({
+  //   productId,
+  //   parentId = null,
+  //   limit = 50,
+  //   offset = 0,
+  // }) {
+  //   if (parentId) {
+  //     const parent = await this.findById(parentId);
+  //     if (!parent) throw new NotFoundResponse("Parent comment not found");
 
-      return await commentModel
-        .find({
-          comment_productId: convertToObjectId(productId),
-          comment_left: { $gt: parent.comment_left },
-          comment_right: { $lt: parent.comment_right },
-          isDeleted: false,
-        })
-        .select({
-          comment_left: 1,
-          comment_right: 1,
-          comment_content: 1,
-          comment_userId: 1,
-          comment_parentId: 1,
-          createdAt: 1,
-          updatedAt: 1,
-        })
-        .populate("comment_userId", "name email")
-        .skip(offset)
-        .limit(limit)
-        .sort({ comment_left: 1 });
-    }
+  //     return await commentModel
+  //       .find({
+  //         comment_productId: convertToObjectId(productId),
+  //         comment_left: { $gt: parent.comment_left },
+  //         comment_right: { $lt: parent.comment_right },
+  //         isDeleted: false,
+  //       })
+  //       .select({
+  //         comment_left: 1,
+  //         comment_right: 1,
+  //         comment_content: 1,
+  //         comment_userId: 1,
+  //         comment_parentId: 1,
+  //         createdAt: 1,
+  //         updatedAt: 1,
+  //       })
+  //       .populate("comment_userId", "name email")
+  //       .skip(offset)
+  //       .limit(limit)
+  //       .sort({ comment_left: 1 });
+  //   }
 
-    return await commentModel
-      .find({
-        comment_parentId: parentId,
-        comment_productId: convertToObjectId(productId),
-        isDeleted: false,
-      })
-      .select({
-        comment_left: 1,
-        comment_right: 1,
-        comment_content: 1,
-        comment_userId: 1,
-        comment_parentId: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      })
-      .populate("comment_userId", "name email")
-      .skip(offset)
-      .limit(limit)
-      .sort({ comment_left: 1 });
-  }
+  //   return await commentModel
+  //     .find({
+  //       comment_parentId: parentId,
+  //       comment_productId: convertToObjectId(productId),
+  //       isDeleted: false,
+  //     })
+  //     .select({
+  //       comment_left: 1,
+  //       comment_right: 1,
+  //       comment_content: 1,
+  //       comment_userId: 1,
+  //       comment_parentId: 1,
+  //       createdAt: 1,
+  //       updatedAt: 1,
+  //     })
+  //     .populate("comment_userId", "name email")
+  //     .skip(offset)
+  //     .limit(limit)
+  //     .sort({ comment_left: 1 });
+  // }
 
   static async findMaxRightValue(productId) {
     return await commentModel.findOne(
@@ -160,6 +160,135 @@ class CommentRepository {
       comment_productId: convertToObjectId(productId),
       isDeleted: false,
     });
+  }
+
+
+  static async getAverageRatingByProductId(productId) {
+    const result = await commentModel.aggregate([
+      {
+        $match: {
+          comment_productId: convertToObjectId(productId),
+          rating: { $ne: null },
+          isDeleted: false
+        }
+      },
+      {
+        $group: {
+          _id: "$comment_productId",
+          averageRating: { $avg: "$rating" },
+          totalRatings: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    return result.length > 0 ? result[0] : { averageRating: 0, totalRatings: 0 };
+  }
+
+  static async getRatingDistribution(productId) {
+    return await commentModel.aggregate([
+      {
+        $match: {
+          comment_productId: convertToObjectId(productId),
+          rating: { $ne: null },
+          isDeleted: false
+        }
+      },
+      {
+        $group: {
+          _id: "$rating",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: -1 }
+      }
+    ]);
+  }
+
+  static async getCommentsByRating({
+    productId,
+    rating,
+    limit = 50,
+    offset = 0,
+  }) {
+    return await commentModel
+      .find({
+        comment_productId: convertToObjectId(productId),
+        rating: rating,
+        isDeleted: false,
+      })
+      .select({
+        comment_left: 1,
+        comment_right: 1,
+        comment_content: 1,
+        comment_userId: 1,
+        comment_parentId: 1,
+        rating: 1,
+        images: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      })
+      .populate("comment_userId", "name email")
+      .skip(offset)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+  }
+  
+  static async getCommentsByParentId({
+    productId,
+    parentId = null,
+    limit = 50,
+    offset = 0,
+  }) {
+    if (parentId) {
+      const parent = await this.findById(parentId);
+      if (!parent) throw new NotFoundResponse("Parent comment not found");
+
+      return await commentModel
+        .find({
+          comment_productId: convertToObjectId(productId),
+          comment_left: { $gt: parent.comment_left },
+          comment_right: { $lt: parent.comment_right },
+          isDeleted: false,
+        })
+        .select({
+          comment_left: 1,
+          comment_right: 1,
+          comment_content: 1,
+          comment_userId: 1,
+          comment_parentId: 1,
+          rating: 1,
+          images: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        })
+        .populate("comment_userId", "name email")
+        .skip(offset)
+        .limit(limit)
+        .sort({ comment_left: 1 });
+    }
+
+    return await commentModel
+      .find({
+        comment_parentId: parentId,
+        comment_productId: convertToObjectId(productId),
+        isDeleted: false,
+      })
+      .select({
+        comment_left: 1,
+        comment_right: 1,
+        comment_content: 1,
+        comment_userId: 1,
+        comment_parentId: 1,
+        rating: 1,
+        images: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      })
+      .populate("comment_userId", "name email")
+      .skip(offset)
+      .limit(limit)
+      .sort({ comment_left: 1 });
   }
 }
 

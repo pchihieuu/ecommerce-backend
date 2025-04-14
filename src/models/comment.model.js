@@ -31,6 +31,19 @@ const commentSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: COLLECTION_NAME,
     },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: null,
+    },
+
+    images: [
+      {
+        url: { type: String },
+        publicId: { type: String },
+      },
+    ],
     isDeleted: {
       type: Boolean,
       default: false,
@@ -39,7 +52,7 @@ const commentSchema = new Schema(
   {
     timestamps: true,
     collection: COLLECTION_NAME,
-  }
+  },
 );
 
 module.exports = model(DOCUMENT_NAME, commentSchema);
