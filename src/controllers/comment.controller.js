@@ -56,7 +56,7 @@ class CommentController {
       message: "Get comment by rating successfully",
       metadata: await CommentService.getCommentsByRating({
         productId,
-        rating: Number(rating),
+        rating: rating,
         limit: limit ? Number(limit) : 50,
         offset: offset ? Number(offset) : 0,
       }),
@@ -72,6 +72,21 @@ class CommentController {
         commentId,
         productId,
         userId: req.user.userId,
+      }),
+    }).send(res);
+  }
+
+  async getCommentsByRatingRange(req, res, next) {
+    const { productId, minRating, maxRating, limit, offset } = req.query;
+    
+    new SuccessResponse({
+      message: "Get comments by rating range successfully",
+      metadata: await CommentService.getCommentsByRatingRange({
+        productId,
+        minRating: parseFloat(minRating || 1),
+        maxRating: parseFloat(maxRating || 5),
+        limit: limit ? Number(limit) : 50,
+        offset: offset ? Number(offset) : 0,
       }),
     }).send(res);
   }

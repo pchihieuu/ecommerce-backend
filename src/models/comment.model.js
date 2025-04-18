@@ -36,6 +36,7 @@ const commentSchema = new Schema(
       min: 1,
       max: 5,
       default: null,
+      set: (val) => (val ? Math.round(val * 10) / 10 : null),
     },
 
     images: [
