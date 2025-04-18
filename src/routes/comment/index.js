@@ -13,7 +13,10 @@ router.get(
   "/ratings/summary",
   asyncHandler(commentController.getProductRatingSummary),
 );
-
+router.get(
+  "/ratings/range",
+  asyncHandler(commentController.getCommentsByRatingRange)
+);
 router.get(
   "/ratings/filter",
   asyncHandler(commentController.getCommentsByRating),

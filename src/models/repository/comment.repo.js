@@ -21,67 +21,13 @@ class CommentRepository {
       isDeleted: false,
     });
   }
-
-  // static async getCommentsByParentId({
-  //   productId,
-  //   parentId = null,
-  //   limit = 50,
-  //   offset = 0,
-  // }) {
-  //   if (parentId) {
-  //     const parent = await this.findById(parentId);
-  //     if (!parent) throw new NotFoundResponse("Parent comment not found");
-
-  //     return await commentModel
-  //       .find({
-  //         comment_productId: convertToObjectId(productId),
-  //         comment_left: { $gt: parent.comment_left },
-  //         comment_right: { $lt: parent.comment_right },
-  //         isDeleted: false,
-  //       })
-  //       .select({
-  //         comment_left: 1,
-  //         comment_right: 1,
-  //         comment_content: 1,
-  //         comment_userId: 1,
-  //         comment_parentId: 1,
-  //         createdAt: 1,
-  //         updatedAt: 1,
-  //       })
-  //       .populate("comment_userId", "name email")
-  //       .skip(offset)
-  //       .limit(limit)
-  //       .sort({ comment_left: 1 });
-  //   }
-
-  //   return await commentModel
-  //     .find({
-  //       comment_parentId: parentId,
-  //       comment_productId: convertToObjectId(productId),
-  //       isDeleted: false,
-  //     })
-  //     .select({
-  //       comment_left: 1,
-  //       comment_right: 1,
-  //       comment_content: 1,
-  //       comment_userId: 1,
-  //       comment_parentId: 1,
-  //       createdAt: 1,
-  //       updatedAt: 1,
-  //     })
-  //     .populate("comment_userId", "name email")
-  //     .skip(offset)
-  //     .limit(limit)
-  //     .sort({ comment_left: 1 });
-  // }
-
   static async findMaxRightValue(productId) {
     return await commentModel.findOne(
       {
         comment_productId: convertToObjectId(productId),
       },
       "comment_right",
-      { sort: { comment_right: -1 } }
+      { sort: { comment_right: -1 } },
     );
   }
 
@@ -94,7 +40,7 @@ class CommentRepository {
         },
         {
           $inc: { comment_right: 2 },
-        }
+        },
       ),
 
       commentModel.updateMany(
@@ -104,7 +50,7 @@ class CommentRepository {
         },
         {
           $inc: { comment_left: 2 },
-        }
+        },
       ),
     ]);
   }
@@ -118,7 +64,7 @@ class CommentRepository {
         },
         {
           $inc: { comment_right: -width },
-        }
+        },
       ),
 
       commentModel.updateMany(
@@ -128,7 +74,7 @@ class CommentRepository {
         },
         {
           $inc: { comment_left: -width },
-        }
+        },
       ),
     ]);
   }
@@ -141,17 +87,18 @@ class CommentRepository {
       },
       {
         isDeleted: true,
-      }
+      },
     );
   }
 
-  static async updateComment(commentId, content) {
+  static async updateComment(commentId, content, rating) {
     return await commentModel.findByIdAndUpdate(
       commentId,
       {
         comment_content: content,
+        rating: rating,
       },
-      { new: true }
+      { new: true },
     );
   }
 
@@ -162,26 +109,27 @@ class CommentRepository {
     });
   }
 
-
   static async getAverageRatingByProductId(productId) {
     const result = await commentModel.aggregate([
       {
         $match: {
           comment_productId: convertToObjectId(productId),
           rating: { $ne: null },
-          isDeleted: false
-        }
+          isDeleted: false,
+        },
       },
       {
         $group: {
           _id: "$comment_productId",
           averageRating: { $avg: "$rating" },
-          totalRatings: { $sum: 1 }
-        }
-      }
+          totalRatings: { $sum: 1 },
+        },
+      },
     ]);
-    
-    return result.length > 0 ? result[0] : { averageRating: 0, totalRatings: 0 };
+
+    return result.length > 0
+      ? result[0]
+      : { averageRating: 0, totalRatings: 0 };
   }
 
   static async getRatingDistribution(productId) {
@@ -190,18 +138,18 @@ class CommentRepository {
         $match: {
           comment_productId: convertToObjectId(productId),
           rating: { $ne: null },
-          isDeleted: false
-        }
+          isDeleted: false,
+        },
       },
       {
         $group: {
           _id: "$rating",
-          count: { $sum: 1 }
-        }
+          count: { $sum: 1 },
+        },
       },
       {
-        $sort: { _id: -1 }
-      }
+        $sort: { _id: -1 },
+      },
     ]);
   }
 
@@ -233,7 +181,7 @@ class CommentRepository {
       .limit(limit)
       .sort({ createdAt: -1 });
   }
-  
+
   static async getCommentsByParentId({
     productId,
     parentId = null,
@@ -289,6 +237,36 @@ class CommentRepository {
       .skip(offset)
       .limit(limit)
       .sort({ comment_left: 1 });
+  }
+
+  static async getCommentsByRatingRange({
+    productId,
+    minRating,
+    maxRating,
+    limit = 50,
+    offset = 0,
+  }) {
+    return await commentModel
+      .find({
+        comment_productId: convertToObjectId(productId),
+        rating: { $gte: minRating, $lte: maxRating },
+        isDeleted: false,
+      })
+      .select({
+        comment_left: 1,
+        comment_right: 1,
+        comment_content: 1,
+        comment_userId: 1,
+        comment_parentId: 1,
+        rating: 1,
+        images: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      })
+      .populate("comment_userId", "name email")
+      .skip(offset)
+      .limit(limit)
+      .sort({ createdAt: -1 });
   }
 }
 
