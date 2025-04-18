@@ -25,7 +25,7 @@ const searchProductsByUser = async ({ keySearch }) => {
       },
       {
         score: { $meta: "textScore" },
-      }
+      },
     )
     .sort({ score: { $meta: "textScore" } })
     .lean();
@@ -99,7 +99,7 @@ const updateProductById = async ({
       _id: new mongoose.Types.ObjectId(product_id),
     },
     updateData,
-    { new: isNews }
+    { new: isNews },
   );
 };
 
@@ -127,7 +127,7 @@ const checkProductByServer = async (products) => {
           // shop_id: foundProduct.product_shop,
         };
       }
-    })
+    }),
   );
 };
 
@@ -141,6 +141,17 @@ const queryListProducts = async ({ query, limit, skip }) => {
     .lean()
     .exec();
 };
+
+const updateProductRating = async (productId, newRatingAvg) => {
+  return await product.findByIdAndUpdate(
+    convertToObjectId(productId),
+    {
+      product_ratingsAverage: newRatingAvg,
+    },
+    { new: true },
+  );
+};
+
 module.exports = {
   findAllDraftProducts,
   publishProductByShop,
@@ -152,4 +163,5 @@ module.exports = {
   updateProductById,
   getProductById,
   checkProductByServer,
+  updateProductRating,
 };

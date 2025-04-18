@@ -1,13 +1,15 @@
 "use strict";
 
-const { getProductById } = require("../models/repository/product.repo");
+const {
+  getProductById,
+  updateProductRating,
+} = require("../models/repository/product.repo");
 const CommentRepository = require("../models/repository/comment.repo");
 const {
   NotFoundResponse,
   ForbiddenResponse,
   BadRequestResponse,
 } = require("../core/error.response");
-const commentModel = require("../models/comment.model");
 
 /**
  * Key features: Comment service
@@ -36,7 +38,7 @@ class CommentService {
       );
     }
 
-    if ((rating !== null) & (rating < 1 || rating > 5)) {
+    if (rating !== null && (rating < 1 || rating > 5)) {
       throw new BadRequestResponse("Rating must be between 1 and 5");
     }
 
@@ -74,7 +76,13 @@ class CommentService {
     commentPayload.comment_right = rightValue + 1;
 
     // Save comment
-    return await CommentRepository.createComment(commentPayload);
+    const comment = await CommentRepository.createComment(commentPayload);
+
+    if (rating !== null) {
+      await this.updateProductRatingAverage(productId);
+    }
+
+    return comment;
   }
 
   static async getCommentsByParentId({
@@ -111,20 +119,26 @@ class CommentService {
       );
     }
 
-    if (rating !== null && rating < 1 && rating > 5) {
+    if (rating !== null && (rating < 1 || rating > 5)) {
       throw new BadRequestResponse("Rating must be between 1 and 5");
     }
+    const oldRating = comment.rating;
+
     // Update comment content
-    return await commentModel.findByIdAndUpdate(
-      // commentId,
-      // {
-      //   comment_content: content,
-      //   rating: rating !== undefined ? rating : comment.rating,
-      // },
-      // {
-      //   new: true,
-      // },
+    const updatedComment = await CommentRepository.updateComment(
+      commentId,
+      content,
+      rating,
     );
+
+    if (
+      (rating !== null && oldRating !== null) ||
+      (oldRating !== null && rating === null)
+    ) {
+      await this.updateProductRatingAverage(comment.comment_productId);
+    }
+
+    return updatedComment;
   }
 
   static async getProductRatingSummary(productId) {
@@ -175,6 +189,7 @@ class CommentService {
       offset,
     });
   }
+
   static async deleteComment({ commentId, productId, userId }) {
     // Check if the product exists
     const product = await getProductById({ productId });
@@ -195,21 +210,65 @@ class CommentService {
     const right = comment.comment_right;
     const width = right - left + 1;
 
+    // check if comment had a rating before delete
+    const hadRating = comment.rating !== null;
     // Implement soft delete by setting isDeleted flag
     await CommentRepository.markCommentsAsDeleted(productId, left, right);
 
     // Update left and right values for remaining comments
     await CommentRepository.updateCommentsOnDelete(productId, left, width);
 
+    // if deleted a hadRating, update product rating
+    if (hadRating) {
+      await this.updateProductRatingAverage(productId);
+    }
+
     return true;
   }
 
+  static async getCommentsByRatingRange({
+    productId,
+    minRating,
+    maxRating,
+    limit = 50,
+    offset = 0,
+  }) {
+    const product = await getProductById({ productId });
+    if (!product) {
+      throw new NotFoundResponse("Product not found");
+    }
+  
+    // Validate rating range
+    if (minRating < 1 || maxRating > 5 || minRating > maxRating) {
+      throw new BadRequestResponse("Invalid rating range. Must be between 1 and 5");
+    }
+  
+    return await CommentRepository.getCommentsByRatingRange({
+      productId,
+      minRating: parseFloat(minRating),
+      maxRating: parseFloat(maxRating),
+      limit,
+      offset,
+    });
+  }
+  
   static async countComments(productId) {
     // Additional utility method to count comments for a product
     const product = await getProductById({ productId });
     if (!product) throw new NotFoundResponse("Product not found");
 
     return await CommentRepository.countByProductId(productId);
+  }
+
+  static async updateProductRatingAverage(productId) {
+    const ratingInfo =
+      await CommentRepository.getAverageRatingByProductId(productId);
+
+    const averageRating = ratingInfo.averageRating || 4.5;
+
+    await updateProductRating(productId, averageRating);
+
+    return averageRating;
   }
 }
 
