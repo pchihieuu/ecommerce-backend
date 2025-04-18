@@ -5,7 +5,9 @@ const CommentRepository = require("../models/repository/comment.repo");
 const {
   NotFoundResponse,
   ForbiddenResponse,
+  BadRequestResponse,
 } = require("../core/error.response");
+const commentModel = require("../models/comment.model");
 
 /**
  * Key features: Comment service
@@ -21,11 +23,22 @@ class CommentService {
     productId,
     userId,
     content,
+    rating = null,
     parentCommentId = null,
   }) {
     // Validate product exists
     const product = await getProductById({ productId });
     if (!product) throw new NotFoundResponse("Product not found");
+
+    if (parentCommentId && rating) {
+      throw new BadRequestResponse(
+        "Rating can only by added to root comment, no replied comment",
+      );
+    }
+
+    if ((rating !== null) & (rating < 1 || rating > 5)) {
+      throw new BadRequestResponse("Rating must be between 1 and 5");
+    }
 
     // Create comment payload
     const commentPayload = {
@@ -33,6 +46,7 @@ class CommentService {
       comment_userId: userId,
       comment_content: content,
       comment_parentId: parentCommentId,
+      rating: rating,
     };
 
     let rightValue;
@@ -50,9 +64,8 @@ class CommentService {
       await CommentRepository.updateCommentsOnInsert(productId, rightValue);
     } else {
       // Root level comment
-      const maxRightValue = await CommentRepository.findMaxRightValue(
-        productId
-      );
+      const maxRightValue =
+        await CommentRepository.findMaxRightValue(productId);
       rightValue = maxRightValue ? maxRightValue.comment_right + 1 : 1;
     }
 
@@ -82,21 +95,86 @@ class CommentService {
     });
   }
 
-  static async updateComment({ commentId, userId, content }) {
+  static async updateComment({ commentId, userId, content, rating = null }) {
     // Check if comment exists and belongs to user
     const comment = await CommentRepository.findByIdAndUserId(
       commentId,
-      userId
+      userId,
     );
     if (!comment)
       throw new NotFoundResponse(
-        "Comment not found or you don't have permission to update"
+        "Comment not found or you don't have permission to update",
       );
+    if (rating !== null && comment.comment_parentId) {
+      throw new BadRequestResponse(
+        "Rating can only by updated for root comments",
+      );
+    }
 
+    if (rating !== null && rating < 1 && rating > 5) {
+      throw new BadRequestResponse("Rating must be between 1 and 5");
+    }
     // Update comment content
-    return await CommentRepository.updateComment(commentId, content);
+    return await commentModel.findByIdAndUpdate(
+      // commentId,
+      // {
+      //   comment_content: content,
+      //   rating: rating !== undefined ? rating : comment.rating,
+      // },
+      // {
+      //   new: true,
+      // },
+    );
   }
 
+  static async getProductRatingSummary(productId) {
+    const product = await getProductById({ productId });
+    if (!product) throw new NotFoundResponse("Product not found");
+
+    const averageInfo =
+      await CommentRepository.getAverageRatingByProductId(productId);
+
+    const distribution =
+      await CommentRepository.getRatingDistribution(productId);
+
+    const formattedDistribution = Array.from({ length: 5 }, (_, i) => {
+      const starCount = i + 1;
+      const found = distribution.find((item) => item._id === starCount);
+      return {
+        stars: starCount,
+        count: found ? found.count : 0,
+      };
+    }).reverse();
+
+    return {
+      averageRating: averageInfo.averageRating.toFixed(1),
+      totalRatings: averageInfo.totalRatings,
+      distribution: formattedDistribution,
+    };
+  }
+
+  static async getCommentsByRating({
+    productId,
+    rating,
+    limit = 50,
+    offset = 0,
+  }) {
+    const product = await getProductById({ productId });
+    if (!product) {
+      throw new NotFoundResponse("Product not found");
+    }
+
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestResponse("Rating must be between 1 and 5");
+    }
+
+    return await CommentRepository.getCommentsByRating({
+      productId,
+      rating,
+      limit,
+      offset,
+    });
+  }
   static async deleteComment({ commentId, productId, userId }) {
     // Check if the product exists
     const product = await getProductById({ productId });
@@ -109,7 +187,7 @@ class CommentService {
     // Authorization check - only comment owner can delete their own comment
     if (comment.comment_userId.toString() !== userId.toString()) {
       throw new ForbiddenResponse(
-        "You don't have permission to delete this comment"
+        "You don't have permission to delete this comment",
       );
     }
 

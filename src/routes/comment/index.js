@@ -9,6 +9,16 @@ const router = express.Router();
 router.get("/get-list", asyncHandler(commentController.getCommentsByParentId));
 router.get("/count", asyncHandler(commentController.countComments));
 
+router.get(
+  "/ratings/summary",
+  asyncHandler(commentController.getProductRatingSummary),
+);
+
+router.get(
+  "/ratings/filter",
+  asyncHandler(commentController.getCommentsByRating),
+);
+
 router.use(authenticationV2);
 
 router.post("/create", asyncHandler(commentController.createComment));
