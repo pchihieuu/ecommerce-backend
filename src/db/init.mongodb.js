@@ -6,7 +6,7 @@ require("dotenv").config();
 const {
   db: { port, host, name },
 } = require("../configs/database.js");
-const { countConnect } = require("../helpers/check.connect");
+const { countConnect, checkOverload } = require("../helpers/check.connect");
 const connectString = `mongodb://${host}:${port}/${name}`;
 console.log(connectString);
 class Database {
@@ -22,7 +22,10 @@ class Database {
     mongoose
       .connect(connectString)
       .then((_) => {
-        console.log(`Connected mongodb success`, countConnect());
+        console.log("Connect mongodb success");
+        countConnect();
+
+        checkOverload();
       })
       .catch((err) => console.log(`Error connect`, err.message));
   }
